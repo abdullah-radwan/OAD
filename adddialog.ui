@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Install/Add an addon</string>
+   <string>Install/Add an add-on</string>
   </property>
   <property name="windowIcon">
    <iconset>
@@ -23,7 +23,7 @@
      <item>
       <widget class="QLabel" name="nameLabel">
        <property name="text">
-        <string>Enter addon name:</string>
+        <string>Enter the add-on name:</string>
        </property>
       </widget>
      </item>
@@ -37,7 +37,7 @@
      <item>
       <widget class="QLabel" name="selectLabel">
        <property name="text">
-        <string>Select addon folder:</string>
+        <string>Select the add-on folder:</string>
        </property>
       </widget>
      </item>
@@ -69,7 +69,7 @@
       <string>Install addon into Orbiter</string>
      </property>
      <property name="text">
-      <string>Install addon</string>
+      <string>Install the add-on</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -82,7 +82,7 @@
       <string>Remove addon folder with its content after install</string>
      </property>
      <property name="text">
-      <string>Remove addon folder after install</string>
+      <string>Remove the add-on folder after install</string>
      </property>
      <property name="checked">
       <bool>true</bool>

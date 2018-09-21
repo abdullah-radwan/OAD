@@ -1,5 +1,5 @@
-#ifndef INSTALLDIALOG_H
-#define INSTALLDIALOG_H
+#ifndef ADDDIALOG_H
+#define ADDDIALOG_H
 
 #include <QDialog>
 #include <QString>
@@ -13,12 +13,12 @@ class AddDialog : public QDialog
     Q_OBJECT
 
 public:
-    QString nameAddon;
-    QString pathAddon;
-    bool install;
-    bool removeDir;
+    QString name;
+    QString path;
     bool check;
-    bool sdkInstall;
+    bool install;
+    bool installSdk;
+    bool removeAddonDir;
     explicit AddDialog(QWidget *parent = nullptr);
     ~AddDialog();
 

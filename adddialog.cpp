@@ -14,22 +14,18 @@ AddDialog::AddDialog(QWidget *parent) :
     ui->pathLabel->hide();
 }
 
-AddDialog::~AddDialog(){delete ui;}
-
-
 void AddDialog::on_selectButton_clicked()
 {
-    pathAddon = QFileDialog::getExistingDirectory(this, "Select addon folder");
+    path = QFileDialog::getExistingDirectory(this, "Select the add-on folder");
 
-    if(!pathAddon.isEmpty() && !pathAddon.isNull()){
+    if(!path.isEmpty() && !path.isNull()){
 
         // Add / to make life eaiser
-        pathAddon = pathAddon + "/";
+        path = path + "/";
 
-        // Show label if it hidden
         if(ui->pathLabel->isHidden()) ui->pathLabel->show();
 
-        ui->pathLabel->setText("Selected folder: " + pathAddon);
+        ui->pathLabel->setText("Selected folder: " + path);
 
     } else {if(!ui->pathLabel->isHidden()) ui->pathLabel->hide();}
 }
@@ -57,15 +53,17 @@ void AddDialog::on_installCheck_toggled(bool checked)
 
 void AddDialog::on_buttonsBox_accepted()
 {
-    // Check from given info
+    // Check the given info
     check = true;
 
     // Set variables
-    nameAddon = ui->nameEdit->text();
+    name = ui->nameEdit->text();
 
     install = ui->installCheck->isChecked();
 
-    removeDir = ui->remCheck->isChecked();
+    removeAddonDir = ui->remCheck->isChecked();
 
-    sdkInstall = ui->sdkCheck->isChecked();
+    installSdk = ui->sdkCheck->isChecked();
 }
+
+AddDialog::~AddDialog(){delete ui;}

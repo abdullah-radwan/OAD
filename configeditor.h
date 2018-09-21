@@ -9,12 +9,14 @@ class ConfigEditor
 {
 public:
     struct Config{
-        QString pathOrbiter;
-        QMap<QString, QList<QString>> dataAddons;
+        QString orbiterPath;
+        QMap<QString, QList<QString>> dbMap;
+        QMap<QString, QString> overMap;
     };
     ConfigEditor();
     static Config readConfig();
-    static void writeConfig(QString pathOrbiter, QMap<QString, QList<QString>> dataAddons);
+    static void writeConfig(QString orbiterPath, QMap<QString, QList<QString>> dbMap,
+                            QMap<QString, QString> overMap);
 };
 
 #endif // CONFIGEDITOR_H

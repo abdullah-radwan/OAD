@@ -27,13 +27,13 @@ SOURCES += \
         mainwindow.cpp \
     configeditor.cpp \
     adddialog.cpp \
-    fileop.cpp
+    addonsops.cpp
 
 HEADERS += \
         mainwindow.h \
     configeditor.h \
     adddialog.h \
-    fileop.h
+    addonsops.h
 
 FORMS += \
         mainwindow.ui \

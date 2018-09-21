@@ -1,7 +1,9 @@
 # Orbiter Addons Manager
-A useful tool to organize your Orbiter add-ons. Shows the current installed add-ons and allows you to uninstall it in one click, backs up your original files on install and restore it on uninstall.
+A useful tool to organize your Orbiter add-ons. Shows the currently installed add-ons and allows you to uninstall it in one click, backs up your original files on install and restore it on uninstall.
 
-Uses expandable database which supports any add-ons. Includes an install features which will add the add-on to the database and back up existing files. Default database includes 31 add-on.
+Uses an expandable database which supports any add-ons. Includes an install features which will add the add-on to the database and back up existing files. Default database includes 31 add-ons.
+
+Includes also an enable and disable feature so you can disable your add-ons without uninstalling it.
 
 Read the manual for full step-by-step explanation.
 

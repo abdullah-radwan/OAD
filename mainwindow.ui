@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>472</width>
+    <height>355</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <normaloff>:/res/icon/satellite.ico</normaloff>:/res/icon/satellite.ico</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <widget class="QLabel" name="nameLabel">
       <property name="text">
@@ -30,14 +30,93 @@
      </widget>
     </item>
     <item>
-     <widget class="QListWidget" name="addonsList">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="statusTip">
-       <string>Installed addons</string>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="listsLayout">
+      <item>
+       <widget class="QGroupBox" name="enabledGroupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Enabled add-ons</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QListWidget" name="enabledAddonsList">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="statusTip">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="disableButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="statusTip">
+            <string>Disable the selected add-on</string>
+           </property>
+           <property name="text">
+            <string>Disable</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="disabledGroupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Disabled add-ons</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <widget class="QListWidget" name="disabledAddonsList">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="enableButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="statusTip">
+            <string>Enable the selected add-on</string>
+           </property>
+           <property name="text">
+            <string>Enable</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item>
      <layout class="QHBoxLayout" name="buttonsLayout">
@@ -47,7 +126,7 @@
          <bool>false</bool>
         </property>
         <property name="statusTip">
-         <string>Install/Add an addon to database</string>
+         <string>Install/Add an add-on to the database</string>
         </property>
         <property name="text">
          <string>Install/Add</string>
@@ -60,7 +139,7 @@
          <bool>false</bool>
         </property>
         <property name="statusTip">
-         <string>Uninstall the selected addon</string>
+         <string>Uninstall the selected add-on</string>
         </property>
         <property name="text">
          <string>Uninstall</string>
@@ -79,15 +158,16 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionPath"/>
+   <addaction name="actionRescan"/>
    <addaction name="actionAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionPath">
    <property name="text">
-    <string>Set Orbiter path</string>
+    <string>Set Orbiter folder</string>
    </property>
    <property name="statusTip">
-    <string>Set Orbiter installation directory</string>
+    <string>Set Orbiter installation folder</string>
    </property>
   </action>
   <action name="actionAbout">
@@ -96,6 +176,17 @@
    </property>
    <property name="statusTip">
     <string>About Orbiter Addons Manager</string>
+   </property>
+  </action>
+  <action name="actionRescan">
+   <property name="text">
+    <string>Rescan add-ons</string>
+   </property>
+   <property name="iconText">
+    <string>Rescan add-ons</string>
+   </property>
+   <property name="toolTip">
+    <string>Rescan add-ons in Orbiter folder</string>
    </property>
   </action>
  </widget>
