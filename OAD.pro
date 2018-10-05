@@ -26,18 +26,27 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     configeditor.cpp \
-    adddialog.cpp \
-    addonsops.cpp
+    addonsops.cpp \
+    settingswindow.cpp \
+    adddbdialog.cpp \
+    installdialog.cpp \
+    addigndialog.cpp
 
 HEADERS += \
         mainwindow.h \
     configeditor.h \
-    adddialog.h \
-    addonsops.h
+    addonsops.h \
+    settingswindow.h \
+    adddbdialog.h \
+    installdialog.h \
+    addigndialog.h
 
 FORMS += \
         mainwindow.ui \
-    adddialog.ui
+    settingswindow.ui \
+    adddbdialog.ui \
+    installdialog.ui \
+    addigndialog.ui
 
 RC_ICONS = res\icon\satellite.ico
 

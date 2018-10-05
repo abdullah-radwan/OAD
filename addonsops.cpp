@@ -1,15 +1,18 @@
 #include "addonsops.h"
 #include <QDirIterator>
 
-AddonsOps::AddonsOps(QString orbiterPath, QMap<QString, QList<QString>> dbMap, QMap<QString, QString> overMap){
+AddonsOps::AddonsOps(){}
+
+AddonsOps::AddonsOps(QString orbiterPath, QString backupDir, QList<QString> ignoredList,
+                     QMap<QString, QList<QString>> dbMap, QMap<QString, QString> overMap){
 
     this->orbiterPath = orbiterPath;
+
+    this->ignoredList = ignoredList;
 
     this->dbMap = dbMap;
 
     this->overMap = overMap;
-
-    backupDir = QDir::currentPath() + "/OrbiterBackup/";
 
     QDir checkBackupDir(backupDir);
 
@@ -18,9 +21,7 @@ AddonsOps::AddonsOps(QString orbiterPath, QMap<QString, QList<QString>> dbMap, Q
 
 AddonsOps::addonsLists AddonsOps::scanAddons(){
 
-    QList<QString> enabledAddons;
-
-    QList<QString> disabledAddons;
+    QList<QString> enabledAddons, disabledAddons;
 
     foreach(QString addon, dbMap.keys()){
 
@@ -30,9 +31,8 @@ AddonsOps::addonsLists AddonsOps::scanAddons(){
 
         foreach(QString file, dbMap.value(addon)){
 
-            // Avoid comparing with these folders as they don't always exists
-            if(!file.startsWith("Orbitersdk", Qt::CaseInsensitive) && !file.startsWith("Scenarios", Qt::CaseInsensitive) &&
-                    !file.startsWith("Sources", Qt::CaseInsensitive) && !file.startsWith("Doc", Qt::CaseInsensitive)){
+            if(!ignoredList.contains(file.split("/").first().toLower())
+                    && !ignoredList.contains(file.split("/").last().toLower())){
 
                 if(QFileInfo (orbiterPath + file).exists()){enabledExists = true;}
 
@@ -139,8 +139,8 @@ void AddonsOps::disableAddon(QString name){
 
                 QString absPath = orbiterPath + dbFile;
 
-                if(!dbFile.startsWith("Orbitersdk", Qt::CaseInsensitive) && !dbFile.startsWith("Sources", Qt::CaseInsensitive)
-                        && !dbFile.startsWith("Doc", Qt::CaseInsensitive)){
+                if(!ignoredList.contains(file.split("/").first().toLower())
+                        && !ignoredList.contains(file.split("/").last().toLower())){
 
                     QFile::rename(absPath, absPath + ".oad");
 
@@ -150,8 +150,8 @@ void AddonsOps::disableAddon(QString name){
 
         }
 
-        if(!file.startsWith("Orbitersdk", Qt::CaseInsensitive) && !file.startsWith("Sources", Qt::CaseInsensitive)
-                && !file.startsWith("Doc", Qt::CaseInsensitive)){
+        if(!ignoredList.contains(file.split("/").first().toLower())
+                && !ignoredList.contains(file.split("/").last().toLower())){
 
             QFileInfo absPath(orbiterPath + file);
 
@@ -164,11 +164,74 @@ void AddonsOps::disableAddon(QString name){
 
 }
 
-void AddonsOps::addAddon(QString name, QString path, bool install, bool installSdk, bool removeAddonDir){
+void AddonsOps::installAddon(QString name, QString path, bool installSources, bool removeAddonDir){
+
+    QList<QString> files = scanDirectory(path);
+
+    foreach(QString file, files){
+
+        if((file.startsWith("Orbitersdk", Qt::CaseInsensitive) || file.startsWith("Sources", Qt::CaseInsensitive))
+                && !installSources) continue;
+
+        QString filePath = orbiterPath + file;
+
+        QFileInfo fileInfo(filePath);
+
+        // Create the parent directory to the addon if not exists
+        if(!fileInfo.dir().exists()){fileInfo.dir().mkpath(".");}
+
+        // If a file in the addon exists in Orbiter
+        if(fileInfo.exists()){
+
+            setOverrider(name);
+
+            // Set the parent directory to the file
+            QDir parentBackDir(backupDir + QFileInfo(file).dir().path());
+
+            // Create the parent directory if not exists in the backup path
+            if(!parentBackDir.exists()) parentBackDir.mkpath(".");
+
+            QFile::copy(filePath, backupDir + file);
+
+            QFile::remove(filePath);
+
+            QFile::copy(path + file, filePath);
+
+         } else if(QFileInfo(filePath + ".oad").exists()){
+
+            setOverrider(name);
+
+            // Set the parent directory to the file
+            QDir parentBackDir(backupDir + QFileInfo(file).dir().path());
+
+            // Create the parent directory if not exists in the backup path
+            if(!parentBackDir.exists()) parentBackDir.mkpath(".");
+
+            filePath += ".oad";
+
+            QFile::copy(filePath, backupDir + file + ".oad");
+
+            QFile::remove(filePath);
+
+            QFile::copy(path + file, filePath);
+
+        } else if(!overMap.key(name).isEmpty()){QFile::copy(path + file, filePath + ".oad");}
+
+        else {QFile::copy(path + file, filePath);}
+
+    }
+
+    if(removeAddonDir){QDir(path).removeRecursively();}
+
+    setDbMap(name, files);
+
+}
+
+QList<QString> AddonsOps::scanDirectory(QString dirPath){
 
     QList<QString> files;
 
-    QDirIterator it(path, QDirIterator::Subdirectories);
+    QDirIterator it(dirPath, QDirIterator::Subdirectories);
 
     while (it.hasNext()) {
 
@@ -180,7 +243,7 @@ void AddonsOps::addAddon(QString name, QString path, bool install, bool installS
         if(fileInfo.isFile()){
 
             // Convert the path to relative path from the given directory
-            QString relPath = QDir(path).relativeFilePath(it.filePath());
+            QString relPath = QDir(dirPath).relativeFilePath(it.filePath());
 
             files.append(relPath);
 
@@ -188,134 +251,73 @@ void AddonsOps::addAddon(QString name, QString path, bool install, bool installS
 
     }
 
-    // If install checkbox is checked
-    if(install){
+    files.sort();
 
-        foreach(QString file, files){
+    return files;
 
-            if(file.startsWith("Orbitersdk", Qt::CaseInsensitive) && !installSdk){continue;}
+}
 
-            QString filePath = orbiterPath + file;
+void AddonsOps::setOverrider(QString addonName){
 
-            QFileInfo fileInfo(filePath);
+    foreach(QString addon, dbMap.keys()){
 
-            // Create the parent directory to the addon if not exists
-            if(!fileInfo.dir().exists()){fileInfo.dir().mkpath(".");}
+       if(addonName == addon) continue;
 
-            // If a file in the addon exists in Orbiter
-            if(fileInfo.exists()){
+       // If the addon doesn't exists in the overrider map, add it
+       if(overMap.key(addonName).isEmpty() && overMap.value(addonName).isEmpty()){
 
-                foreach(QString addon, dbMap.keys()){
+           foreach(QString dbFile, dbMap.value(addon)){
 
-                    if(addon != name){
+               if(addonName == dbFile){overMap.insert(addon, addonName); break;}
 
-                        foreach(QString dbFile, dbMap.value(addon)){
+           }
 
-                            if(file == dbFile){overMap.insert(addon, name); break;}
-
-                        }
-
-                    }
-                }
-
-                // Set the parent directory to the file
-                QDir parentBackDir(backupDir + QFileInfo(file).dir().path());
-
-                // Create the parent directory if not exists in the backup path
-                if(!parentBackDir.exists()) parentBackDir.mkpath(".");
-
-                QFile::copy(filePath, backupDir + file);
-
-                QFile::remove(filePath);
-
-                QFile::copy(path + file, filePath);
-
-            } else if(QFileInfo(filePath + ".oad").exists()){
-
-                foreach(QString addon, dbMap.keys()){
-
-                    if(name == addon) continue;
-
-                    if(overMap.key(name).isEmpty() && overMap.value(name).isEmpty()){
-
-                        foreach(QString dbFile, dbMap.value(addon)){
-
-                            if(file == dbFile){overMap.insert(addon, name); break;}
-
-                        }
-
-                    }
-
-                }
-
-                // Set the parent directory to the file
-                QDir parentBackDir(backupDir + QFileInfo(file).dir().path());
-
-                // Create the parent directory if not exists in the backup path
-                if(!parentBackDir.exists()) parentBackDir.mkpath(".");
-
-                filePath += ".oad";
-
-                QFile::copy(filePath, backupDir + file + ".oad");
-
-                QFile::remove(filePath);
-
-                QFile::copy(path + file, filePath);
-
-            } else if(!overMap.key(name).isEmpty()){QFile::copy(path + file, filePath + ".oad");}
-
-            else {QFile::copy(path + file, filePath);}
-
-        }
-
-        if(removeAddonDir){QDir(path).removeRecursively();}
+       }
 
     }
+
+}
+
+void AddonsOps::setDbMap(QString addonName, QList<QString> addonFiles){
 
     bool exists = false;
 
     foreach(QString addon, dbMap.keys()){
 
-        QList<QString> dbFiles;
+        QList<QString> dbFiles, compFiles;
 
         foreach(QString file, dbMap.value(addon)){
 
-            if(!file.startsWith("Orbitersdk", Qt::CaseInsensitive) && !file.startsWith("Scenarios", Qt::CaseInsensitive) &&
-                    !file.startsWith("Sources", Qt::CaseInsensitive) && !file.startsWith("Doc", Qt::CaseInsensitive)){
+            if(!ignoredList.contains(file.split("/").first().toLower())
+                    && !ignoredList.contains(file.split("/").last().toLower())){
 
                 dbFiles.append(file);
 
             }
-
         }
 
-        QList<QString> compFiles;
+        foreach(QString file, addonFiles){
 
-        foreach(QString file, files){
-
-            if(!file.startsWith("Orbitersdk", Qt::CaseInsensitive) && !file.startsWith("Scenarios", Qt::CaseInsensitive) &&
-                    !file.startsWith("Sources", Qt::CaseInsensitive)  && !file.startsWith("Doc", Qt::CaseInsensitive)){
+            if(!ignoredList.contains(file.split("/").first().toLower())
+                    && !ignoredList.contains(file.split("/").last().toLower())){
 
                 compFiles.append(file);
 
             }
-
         }
 
-        dbFiles.sort();
-
-        compFiles.sort();
+        dbFiles.sort(); compFiles.sort();
 
         if(compFiles == dbFiles){
 
             // Rename the database add-on name to the entered name
-            if(addon != name){
+            if(addon != addonName){
 
                 QList<QString> tempList = dbMap.value(addon);
 
                 dbMap.remove(addon);
 
-                dbMap.insert(name, tempList);
+                dbMap.insert(addonName, tempList);
 
             }
 
@@ -327,7 +329,7 @@ void AddonsOps::addAddon(QString name, QString path, bool install, bool installS
 
     }
 
-    if(!exists){dbMap.insert(name, files);}
+    if(!exists){dbMap.insert(addonName, addonFiles);}
 
 }
 
@@ -384,7 +386,7 @@ QString AddonsOps::uninstallAddon(QString name){
         if(!overMap.key(name).isEmpty()){overMap.remove(overMap.key(name));}
 
         // Remove any folder as long as it empty (rmdir removes empty directories only and return false when remove is failed)
-        while(fileDir.rmdir(fileDir.absolutePath())){fileDir.cdUp();}
+        while(fileDir.rmdir(".")){fileDir.cdUp();}
     }
 
     return "";

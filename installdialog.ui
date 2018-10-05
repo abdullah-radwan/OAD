@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>AddDialog</class>
- <widget class="QDialog" name="AddDialog">
+ <class>InstallDialog</class>
+ <widget class="QDialog" name="InstallDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>266</width>
-    <height>226</height>
+    <width>275</width>
+    <height>224</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Install/Add an add-on</string>
+   <string>Install an add-on</string>
   </property>
   <property name="windowIcon">
    <iconset>
@@ -36,6 +36,12 @@
     <layout class="QHBoxLayout" name="selectLayout">
      <item>
       <widget class="QLabel" name="selectLabel">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="text">
         <string>Select the add-on folder:</string>
        </property>
@@ -64,22 +70,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="installCheck">
-     <property name="toolTip">
-      <string>Install addon into Orbiter</string>
-     </property>
-     <property name="text">
-      <string>Install the add-on</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QCheckBox" name="remCheck">
      <property name="toolTip">
-      <string>Remove addon folder with its content after install</string>
+      <string/>
      </property>
      <property name="text">
       <string>Remove the add-on folder after install</string>
@@ -90,63 +83,35 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="sdkCheck">
+    <widget class="QCheckBox" name="sourcesCheck">
      <property name="toolTip">
-      <string>Keep it unchecked if you don't know what is this</string>
+      <string>Don't install Orbitersdk and Sources folders</string>
      </property>
      <property name="text">
-      <string>Install Orbitersdk folder</string>
+      <string>Install sources</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QDialogButtonBox" name="buttonsBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="buttonsLayout">
+     <item>
+      <widget class="QPushButton" name="installButton">
+       <property name="text">
+        <string>Install</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancelButton">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>buttonsBox</sender>
-   <signal>accepted()</signal>
-   <receiver>AddDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonsBox</sender>
-   <signal>rejected()</signal>
-   <receiver>AddDialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

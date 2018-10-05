@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SettingsWindow</class>
+ <widget class="QMainWindow" name="SettingsWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>444</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Settings - Orbiter Addons Manager</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="generalTab">
+       <attribute name="title">
+        <string>General</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QGroupBox" name="orbiterBox">
+          <property name="title">
+           <string>Orbiter installations</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <layout class="QHBoxLayout" name="selectLayout">
+             <item>
+              <widget class="QLabel" name="pathsLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Select Orbiter installation:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="pathsCombo">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="buttonsLayout">
+             <item>
+              <widget class="QPushButton" name="addPathButton">
+               <property name="toolTip">
+                <string/>
+               </property>
+               <property name="statusTip">
+                <string>Add an Orbiter installation</string>
+               </property>
+               <property name="text">
+                <string>Add</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="removePathButton">
+               <property name="toolTip">
+                <string/>
+               </property>
+               <property name="statusTip">
+                <string>Remove the selected Orbiter installation</string>
+               </property>
+               <property name="text">
+                <string>Remove</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="snapBox">
+          <property name="title">
+           <string>Snapshots</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QPushButton" name="createButton">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="statusTip">
+              <string>Create a snapshot</string>
+             </property>
+             <property name="text">
+              <string>Create</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="importButton">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="statusTip">
+              <string>Import a snapshot</string>
+             </property>
+             <property name="text">
+              <string>Import</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="ignoredGroup">
+          <property name="title">
+           <string>Ignored files/folders</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <item>
+            <widget class="QListWidget" name="ignoredList"/>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="ignoredButtonsLayout">
+             <item>
+              <widget class="QPushButton" name="addIgnButton">
+               <property name="statusTip">
+                <string>Add an ignored file/folder</string>
+               </property>
+               <property name="text">
+                <string>Add</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="removeIgnButton">
+               <property name="statusTip">
+                <string>Remove the selected file/folder</string>
+               </property>
+               <property name="text">
+                <string>Remove</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="dbTab">
+       <attribute name="title">
+        <string>Database</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <widget class="QTreeWidget" name="dbTree">
+          <column>
+           <property name="text">
+            <string>Add-ons</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="dbButtonsLayout">
+          <item>
+           <widget class="QPushButton" name="addEntryButton">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="statusTip">
+             <string>Add an add-on to the database</string>
+            </property>
+            <property name="text">
+             <string>Add</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="removeEntryButton">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="statusTip">
+             <string>Remove the selected add-on from the database</string>
+            </property>
+            <property name="text">
+             <string>Remove</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QPushButton" name="editEntryButton">
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="statusTip">
+           <string>Edit the selected add-on</string>
+          </property>
+          <property name="text">
+           <string>Edit</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

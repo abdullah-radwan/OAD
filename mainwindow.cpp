@@ -1,32 +1,31 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "configeditor.h"
-#include "adddialog.h"
+#include "installdialog.h"
 #include "addonsops.h"
-#include <QFileInfo>
+#include <QDir>
 #include <QMessageBox>
-#include <QDirIterator>
-#include <QFileDialog>
 
-AddonsOps createAddonsOps() {
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow){
+
+    ui->setupUi(this);
 
     // Read config, data returned as struct
     auto config = ConfigEditor::readConfig();
 
-    QString orbiterPath = config.orbiterPath;
+    orbiterPath = config.orbiterPath;
 
-    return AddonsOps(orbiterPath, config.dbMap, config.overMap);
-}
+    pathsList = config.pathsList;
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), addonsOps(createAddonsOps()){
+    QString backupDir;
 
-    ui->setupUi(this);
+    if(!orbiterPath.isEmpty()) backupDir = QDir::currentPath() +
+            "/OrbiterBackup " + QString::number(pathsList.indexOf(orbiterPath)) + "/";
 
-    orbiterPath = addonsOps.orbiterPath;
+    addonsOps = AddonsOps(orbiterPath, backupDir, config.ignoredList, config.dbMap, config.overMap);
 
     updateAddonsList();
 
-    // Enable/Disable widgets based on Orbiter path
     setWidgets();
 }
 
@@ -43,9 +42,7 @@ void MainWindow::setWidgets(){
 
         setWidgets(false);
 
-        QMessageBox::warning(this, "Orbiter folder is wrong", "Please select the correct Orbiter folder");
-
-        on_actionPath_triggered();
+        QMessageBox::warning(this, "Wrong Orbiter installation", "Please add a correct Orbiter installation");
 
     }
 
@@ -53,15 +50,11 @@ void MainWindow::setWidgets(){
 
 void MainWindow::setWidgets(bool stat){
 
-    ui->enabledAddonsList->setEnabled(stat);
+    ui->enabledGroup->setEnabled(stat);
 
-    ui->disabledAddonsList->setEnabled(stat);
+    ui->disabledGroup->setEnabled(stat);
 
-    ui->enableButton->setEnabled(stat);
-
-    ui->disableButton->setEnabled(stat);
-
-    ui->addButton->setEnabled(stat);
+    ui->installButton->setEnabled(stat);
 
     ui->uninstallButton->setEnabled(stat);
 
@@ -81,8 +74,8 @@ void MainWindow::updateAddonsList(){
 
 }
 
-void MainWindow::on_enableButton_clicked()
-{
+void MainWindow::on_enableButton_clicked(){
+
     // If nothing is selected
     if(ui->disabledAddonsList->selectedItems().isEmpty()){
 
@@ -97,8 +90,8 @@ void MainWindow::on_enableButton_clicked()
     updateAddonsList();
 }
 
-void MainWindow::on_disableButton_clicked()
-{
+void MainWindow::on_disableButton_clicked(){
+
     if(ui->enabledAddonsList->selectedItems().isEmpty()){
 
         QMessageBox::warning(this, "Select an add-on", "You must select an add-on to disable it");
@@ -112,35 +105,37 @@ void MainWindow::on_disableButton_clicked()
     updateAddonsList();
 }
 
-// Install/Add button
-void MainWindow::on_addButton_clicked()
-{
-    AddDialog addDialog;
+// Install button
+void MainWindow::on_installButton_clicked(){
 
-    addDialog.exec();
+    InstallDialog installDialog(this);
 
-    // If user didn't press Ok button in the dialog
-    if(!addDialog.check) return;
+    installDialog.exec();
+
+    // If user didn't press Install button in the dialog
+    if(!installDialog.check) return;
 
     // If addon name or path is empty
-    if(addDialog.name.isEmpty() || addDialog.path.isEmpty()){
+    if(installDialog.addonName.isEmpty() || installDialog.addonPath.isEmpty()){
 
-        QMessageBox::critical(this, "Add-on hasn't installed/added",
-                              "Add-on hasn't installed/added, you must enter the Add-on name or/and folder");
+        QMessageBox::critical(this, "Enter the add-on's full information",
+                              "Add-on wasn't installed. You must enter the add-on name or/and folder.");
 
         return;
 
     }
 
-    addonsOps.addAddon(addDialog.name, addDialog.path, addDialog.install, addDialog.installSdk, addDialog.removeAddonDir);
+    addonsOps.installAddon(installDialog.addonName, installDialog.addonPath,
+                       installDialog.installSources, installDialog.removeAddonDir);
 
     updateAddonsList();
 
-    QMessageBox::information(this, "Add-on installed/added successfully", addDialog.name + " installed/added successfully");
+    QMessageBox::information(this, "Add-on installed successfully",
+                             installDialog.addonName + "%1installed successfully");
 }
 
-void MainWindow::on_uninstallButton_clicked()
-{
+void MainWindow::on_uninstallButton_clicked(){
+
     if(ui->enabledAddonsList->selectedItems().isEmpty()){
 
         QMessageBox::warning(this, "Select an add-on", "You must select an add-on to uninstall it");
@@ -172,46 +167,55 @@ void MainWindow::on_uninstallButton_clicked()
     QMessageBox::information(this, "Add-on uninstalled successfully", addonName + " uninstalled successfully");
 }
 
-void MainWindow::on_actionPath_triggered()
-{
-    QString path = QFileDialog::getExistingDirectory(this, "Select Orbiter installation folder", orbiterPath);
+void MainWindow::on_actionSettings_triggered(){
 
-    if(path.isEmpty()) {return;};
+    SettingsWindow settingsWin(this);
 
-    // Check if orbiter.exe exists in given path
-    if(QFileInfo(path + "/orbiter.exe").exists()){
+    settingsWin.orbiterPath = orbiterPath;
 
-        orbiterPath = path + "/";
+    settingsWin.backupDir = addonsOps.backupDir;
 
-        setWidgets();
+    settingsWin.pathsList = pathsList;
 
-        addonsOps.orbiterPath = orbiterPath;
+    settingsWin.ignoredList = addonsOps.ignoredList;
 
-        updateAddonsList();
+    settingsWin.dbMap = addonsOps.dbMap;
 
-        ui->statusBar->showMessage("Orbiter folder is set to " + orbiterPath, 5000);
+    settingsWin.show();
 
-    }
+    QEventLoop loop;
 
-    // Open file dialog again (Repeat this function)
-    else {
+    connect(&settingsWin, SIGNAL(closed()), &loop, SLOT(quit()));
 
-        QMessageBox::warning(this, "Orbiter folder is wrong", "Please select the correct Orbiter folder");
+    loop.exec();
 
-        on_actionPath_triggered();
+    orbiterPath = settingsWin.orbiterPath;
 
-    }
+    setWidgets();
+
+    pathsList = settingsWin.pathsList;
+
+    addonsOps.orbiterPath = orbiterPath;
+
+    addonsOps.dbMap = settingsWin.dbMap;
+
+    addonsOps.backupDir = settingsWin.backupDir;
+
+    addonsOps.ignoredList = settingsWin.ignoredList;
+
+    updateAddonsList();
+
 }
 
 void MainWindow::on_actionRescan_triggered(){updateAddonsList();}
 
-void MainWindow::on_actionAbout_triggered()
-{
+void MainWindow::on_actionAbout_triggered(){
+
     QMessageBox::about(this, "About Orbiter Addons Manager","Orbiter Addons Manager <br>"
                                                             "A tool to organize your Orbiter add-ons <br> <br>"
 
-                                                            "Version: 1.0.1 <br>"
-                                                            "Build date: Sept 2018 <br>"
+                                                            "Version: 1.0.2 <br>"
+                                                            "Build date: Oct 2018 <br>"
                                                             "Check for updates here: "
                                                             "<a href='http://bit.ly/2QKVXqV'>http://bit.ly/2QKVXqV</a> <br> <br>"
 
@@ -219,4 +223,9 @@ void MainWindow::on_actionAbout_triggered()
                                                             "Icon by icons8.com");
 }
 
-MainWindow::~MainWindow(){ConfigEditor::writeConfig(orbiterPath, addonsOps.dbMap, addonsOps.overMap); delete ui;}
+MainWindow::~MainWindow(){
+
+    ConfigEditor::writeConfig(orbiterPath, pathsList, addonsOps.ignoredList, addonsOps.dbMap, addonsOps.overMap);
+
+    delete ui;
+}

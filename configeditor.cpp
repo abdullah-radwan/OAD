@@ -10,9 +10,15 @@ ConfigEditor::Config ConfigEditor::readConfig(){
 
     QString orbiterPath;
 
+    QList<QString> pathsList, ignoredList;
+
     settings.beginGroup("General");
 
     orbiterPath = settings.value("OrbiterPath").toString();
+
+    pathsList = settings.value("PathsList").toStringList();
+
+    ignoredList = settings.value("IgnoredList").toStringList();
 
     settings.endGroup();
 
@@ -37,18 +43,24 @@ ConfigEditor::Config ConfigEditor::readConfig(){
     settings.endGroup();
 
     // Return data as config struct
-    return {orbiterPath, dbMap, overMap};
+    return {orbiterPath, pathsList, ignoredList, dbMap, overMap};
 
 }
 
-void ConfigEditor::writeConfig(QString orbiterPath, QMap<QString, QList<QString>> dbMap,
-                               QMap<QString, QString> overMap){
+void ConfigEditor::writeConfig(QString orbiterPath, QList<QString> pathsList, QList<QString> ignoredList,
+                               QMap<QString, QList<QString>> dbMap, QMap<QString, QString> overMap){
 
     QSettings settings("config.cfg", QSettings::IniFormat);
+
+    settings.clear();
 
     settings.beginGroup("General");
 
     settings.setValue("OrbiterPath", orbiterPath);
+
+    settings.setValue("PathsList", QVariant(pathsList));
+
+    settings.setValue("IgnoredList", QVariant(ignoredList));
 
     settings.endGroup();
 

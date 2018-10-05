@@ -2,30 +2,27 @@
 #define MAINWINDOW_H
 
 #include "addonsops.h"
+#include "settingswindow.h"
 #include <QMainWindow>
-#include <QString>
-#include <QMap>
-#include <QList>
 
-namespace Ui {
-class MainWindow;
-}
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
+namespace Ui {class MainWindow;}
+
+class MainWindow : public QMainWindow{Q_OBJECT
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
+
     ~MainWindow();
+
 private slots:
-    void on_actionPath_triggered();
+    void on_actionSettings_triggered();
 
     void on_actionRescan_triggered();
 
     void on_actionAbout_triggered();
 
-    void on_addButton_clicked();
+    void on_installButton_clicked();
 
     void on_uninstallButton_clicked();
 
@@ -35,11 +32,19 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+
     QString orbiterPath;
+
+    QList<QString> pathsList;
+
     AddonsOps addonsOps;
+
     void updateAddonsList();
+
     void setWidgets();
+
     void setWidgets(bool stat);
+
 };
 
 #endif // MAINWINDOW_H

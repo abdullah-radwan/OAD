@@ -32,7 +32,7 @@
     <item>
      <layout class="QHBoxLayout" name="listsLayout">
       <item>
-       <widget class="QGroupBox" name="enabledGroupBox">
+       <widget class="QGroupBox" name="enabledGroup">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>0</horstretch>
@@ -46,7 +46,7 @@
          <item>
           <widget class="QListWidget" name="enabledAddonsList">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -62,7 +62,7 @@
          <item>
           <widget class="QPushButton" name="disableButton">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="statusTip">
             <string>Disable the selected add-on</string>
@@ -76,7 +76,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="disabledGroupBox">
+       <widget class="QGroupBox" name="disabledGroup">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>0</horstretch>
@@ -90,7 +90,7 @@
          <item>
           <widget class="QListWidget" name="disabledAddonsList">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -103,7 +103,7 @@
          <item>
           <widget class="QPushButton" name="enableButton">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="statusTip">
             <string>Enable the selected add-on</string>
@@ -121,22 +121,22 @@
     <item>
      <layout class="QHBoxLayout" name="buttonsLayout">
       <item>
-       <widget class="QPushButton" name="addButton">
+       <widget class="QPushButton" name="installButton">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="statusTip">
-         <string>Install/Add an add-on to the database</string>
+         <string>Install an add-on</string>
         </property>
         <property name="text">
-         <string>Install/Add</string>
+         <string>Install</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="uninstallButton">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="statusTip">
          <string>Uninstall the selected add-on</string>
@@ -157,22 +157,17 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionPath"/>
+   <addaction name="actionSettings"/>
    <addaction name="actionRescan"/>
    <addaction name="actionAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="actionPath">
-   <property name="text">
-    <string>Set Orbiter folder</string>
-   </property>
-   <property name="statusTip">
-    <string>Set Orbiter installation folder</string>
-   </property>
-  </action>
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+   <property name="toolTip">
+    <string>About Orbiter Addons Manager</string>
    </property>
    <property name="statusTip">
     <string>About Orbiter Addons Manager</string>
@@ -186,7 +181,15 @@
     <string>Rescan add-ons</string>
    </property>
    <property name="toolTip">
-    <string>Rescan add-ons in Orbiter folder</string>
+    <string>Rescan add-ons in Orbiter installation</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="text">
+    <string>Settings</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the settings window</string>
    </property>
   </action>
  </widget>
