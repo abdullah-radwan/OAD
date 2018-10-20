@@ -133,7 +133,13 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
-            <widget class="QListWidget" name="ignoredList"/>
+            <widget class="QTreeWidget" name="ignoredTree">
+             <column>
+              <property name="text">
+               <string>Add-on</string>
+              </property>
+             </column>
+            </widget>
            </item>
            <item>
             <layout class="QHBoxLayout" name="ignoredButtonsLayout">

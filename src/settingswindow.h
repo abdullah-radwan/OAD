@@ -3,19 +3,19 @@
 
 #include <QMainWindow>
 #include <QMap>
+#include <settingsops.h>
 
 namespace Ui {class SettingsWindow;}
 
 class SettingsWindow : public QMainWindow{Q_OBJECT
 
 public:
-    QString orbiterPath, backupDir;
-
-    QList<QString> pathsList, ignoredList;
-
-    QMap<QString, QList<QString>> dbMap;
+    SettingsOps settingsOps;
 
     explicit SettingsWindow(QWidget *parent = nullptr);
+
+    SettingsWindow(QWidget *parent, QString orbiterPath, QString backupDir, QList<QString> pathsList,
+                   QMap<QString, QList<QString>> dbMap, QMap<QString, QList<QString>> ignoredMap);
 
     ~SettingsWindow();
 
@@ -53,7 +53,9 @@ private:
 
     void setDbTree();
 
-    void setIgnList();
+    void setIgnTree();
+
+    QString scanDir(QString path);
 
     void closeEvent(QCloseEvent *bar);
 

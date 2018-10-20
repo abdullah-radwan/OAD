@@ -10,7 +10,7 @@ ConfigEditor::Config ConfigEditor::readConfig(){
 
     QString orbiterPath;
 
-    QList<QString> pathsList, ignoredList;
+    QList<QString> pathsList;
 
     settings.beginGroup("General");
 
@@ -18,13 +18,19 @@ ConfigEditor::Config ConfigEditor::readConfig(){
 
     pathsList = settings.value("PathsList").toStringList();
 
-    ignoredList = settings.value("IgnoredList").toStringList();
-
     settings.endGroup();
 
-    QMap<QString, QList<QString>> dbMap;
+    QMap<QString, QList<QString>> ignoredMap, dbMap;
 
     QMap<QString, QString> overMap;
+
+    settings.beginGroup("IgnoredMap");
+
+    QStringList ignKeys = settings.childKeys();
+
+    foreach (QString key, ignKeys) {ignoredMap.insert(key, settings.value(key).toStringList());}
+
+    settings.endGroup();
 
     settings.beginGroup("DatabaseMap");
 
@@ -43,11 +49,11 @@ ConfigEditor::Config ConfigEditor::readConfig(){
     settings.endGroup();
 
     // Return data as config struct
-    return {orbiterPath, pathsList, ignoredList, dbMap, overMap};
+    return {orbiterPath, pathsList, ignoredMap, dbMap, overMap};
 
 }
 
-void ConfigEditor::writeConfig(QString orbiterPath, QList<QString> pathsList, QList<QString> ignoredList,
+void ConfigEditor::writeConfig(QString orbiterPath, QList<QString> pathsList, QMap<QString, QList<QString>> ignoredMap,
                                QMap<QString, QList<QString>> dbMap, QMap<QString, QString> overMap){
 
     QSettings settings("config.cfg", QSettings::IniFormat);
@@ -60,7 +66,19 @@ void ConfigEditor::writeConfig(QString orbiterPath, QList<QString> pathsList, QL
 
     settings.setValue("PathsList", QVariant(pathsList));
 
-    settings.setValue("IgnoredList", QVariant(ignoredList));
+    settings.endGroup();
+
+    settings.beginGroup("IgnoredMap");
+
+    QMap<QString, QList<QString>>::const_iterator ignIterator = ignoredMap.constBegin();
+
+    while (ignIterator != ignoredMap.constEnd()) {
+
+        settings.setValue(ignIterator.key(), QVariant(ignIterator.value()));
+
+        ++ignIterator;
+
+    }
 
     settings.endGroup();
 

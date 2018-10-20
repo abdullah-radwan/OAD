@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>281</width>
-    <height>179</height>
+    <width>315</width>
+    <height>203</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,16 +15,34 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="nameLayout">
+    <layout class="QHBoxLayout" name="filesLayout">
      <item>
-      <widget class="QLabel" name="nameLabel">
+      <widget class="QLabel" name="filesLabel">
        <property name="text">
         <string>Enter the file/folder:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="nameEdit"/>
+      <widget class="QLineEdit" name="filesEdit">
+       <property name="placeholderText">
+        <string>Seperate by comma</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="addonLayout">
+     <item>
+      <widget class="QLabel" name="addonLabel">
+       <property name="text">
+        <string>Select the add-on:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="addonCombo"/>
      </item>
     </layout>
    </item>

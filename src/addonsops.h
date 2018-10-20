@@ -8,9 +8,7 @@ class AddonsOps{
 public:
     QString orbiterPath, backupDir;
 
-    QList<QString> ignoredList;
-
-    QMap<QString, QList<QString>> dbMap;
+    QMap<QString, QList<QString>> ignoredMap, dbMap;
 
     QMap<QString, QString> overMap;
 
@@ -18,7 +16,7 @@ public:
 
     AddonsOps();
 
-    AddonsOps(QString orbiterPath, QString backupDir, QList<QString> ignoredList, QMap<QString,
+    AddonsOps(QString orbiterPath, QString backupDir, QMap<QString, QList<QString>> ignoredMap, QMap<QString,
               QList<QString>> dbMap, QMap<QString, QString> overMap);
 
     addonsLists scanAddons();
@@ -27,16 +25,20 @@ public:
 
     void disableAddon(QString name);
 
-    void installAddon(QString name, QString path, bool installSources, bool removeAddonDir);
+    void installAddon(QString name, QString path, bool compChecked, bool installSources, bool removeAddonDir);
 
     QString uninstallAddon(QString name);
 
-private:
-    QList<QString> scanDirectory(QString dirPath);
+    static QList<QString> scanDirectory(QString dirPath);
 
+    static QString checkCompFile(QString path);
+
+private:
     void setOverrider(QString addonName);
 
     void setDbMap(QString addonName, QList<QString> addonFiles);
+
+    bool checkIgn(QString addonName, QString file);
 
 };
 

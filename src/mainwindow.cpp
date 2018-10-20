@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     if(!orbiterPath.isEmpty()) backupDir = QDir::currentPath() +
             "/OrbiterBackup " + QString::number(pathsList.indexOf(orbiterPath)) + "/";
 
-    addonsOps = AddonsOps(orbiterPath, backupDir, config.ignoredList, config.dbMap, config.overMap);
+    addonsOps = AddonsOps(orbiterPath, backupDir, config.ignoredMap, config.dbMap, config.overMap);
 
     updateAddonsList();
 
@@ -119,19 +119,19 @@ void MainWindow::on_installButton_clicked(){
     if(installDialog.addonName.isEmpty() || installDialog.addonPath.isEmpty()){
 
         QMessageBox::critical(this, "Enter the add-on's full information",
-                              "Add-on wasn't installed. You must enter the add-on name or/and folder.");
+                              "Add-on wasn't installed. You must enter the add-on name or/and path.");
 
         return;
 
     }
 
-    addonsOps.installAddon(installDialog.addonName, installDialog.addonPath,
+    addonsOps.installAddon(installDialog.addonName, installDialog.addonPath, installDialog.compChecked,
                        installDialog.installSources, installDialog.removeAddonDir);
 
     updateAddonsList();
 
     QMessageBox::information(this, "Add-on installed successfully",
-                             installDialog.addonName + "%1installed successfully");
+                             installDialog.addonName + " installed successfully");
 }
 
 void MainWindow::on_uninstallButton_clicked(){
@@ -169,17 +169,7 @@ void MainWindow::on_uninstallButton_clicked(){
 
 void MainWindow::on_actionSettings_triggered(){
 
-    SettingsWindow settingsWin(this);
-
-    settingsWin.orbiterPath = orbiterPath;
-
-    settingsWin.backupDir = addonsOps.backupDir;
-
-    settingsWin.pathsList = pathsList;
-
-    settingsWin.ignoredList = addonsOps.ignoredList;
-
-    settingsWin.dbMap = addonsOps.dbMap;
+    SettingsWindow settingsWin(this, orbiterPath, addonsOps.backupDir, pathsList, addonsOps.dbMap, addonsOps.ignoredMap);
 
     settingsWin.show();
 
@@ -189,19 +179,19 @@ void MainWindow::on_actionSettings_triggered(){
 
     loop.exec();
 
-    orbiterPath = settingsWin.orbiterPath;
+    orbiterPath = settingsWin.settingsOps.orbiterPath;
 
     setWidgets();
 
-    pathsList = settingsWin.pathsList;
+    pathsList = settingsWin.settingsOps.pathsList;
 
     addonsOps.orbiterPath = orbiterPath;
 
-    addonsOps.dbMap = settingsWin.dbMap;
+    addonsOps.dbMap = settingsWin.settingsOps.dbMap;
 
-    addonsOps.backupDir = settingsWin.backupDir;
+    addonsOps.backupDir = settingsWin.settingsOps.backupDir;
 
-    addonsOps.ignoredList = settingsWin.ignoredList;
+    addonsOps.ignoredMap = settingsWin.settingsOps.ignoredMap;
 
     updateAddonsList();
 
@@ -214,7 +204,7 @@ void MainWindow::on_actionAbout_triggered(){
     QMessageBox::about(this, "About Orbiter Addons Manager","Orbiter Addons Manager <br>"
                                                             "A tool to organize your Orbiter add-ons <br> <br>"
 
-                                                            "Version: 1.0.2 <br>"
+                                                            "Version: 1.0.3 <br>"
                                                             "Build date: Oct 2018 <br>"
                                                             "Check for updates here: "
                                                             "<a href='http://bit.ly/2QKVXqV'>http://bit.ly/2QKVXqV</a> <br> <br>"
@@ -225,7 +215,7 @@ void MainWindow::on_actionAbout_triggered(){
 
 MainWindow::~MainWindow(){
 
-    ConfigEditor::writeConfig(orbiterPath, pathsList, addonsOps.ignoredList, addonsOps.dbMap, addonsOps.overMap);
+    ConfigEditor::writeConfig(orbiterPath, pathsList, addonsOps.ignoredMap, addonsOps.dbMap, addonsOps.overMap);
 
     delete ui;
 }

@@ -8,13 +8,18 @@ namespace Ui {class AddIgnDialog;}
 class AddIgnDialog : public QDialog {Q_OBJECT
 
 public:
-    QString addonName;
+    QString addonName, addonFiles;
+
+    QList<QString> addons;
 
     bool check;
 
     explicit AddIgnDialog(QWidget *parent = nullptr);
 
     ~AddIgnDialog();
+
+protected:
+    void showEvent(QShowEvent *ev);
 
 private slots:
     void on_addButton_clicked();
