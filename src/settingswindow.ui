@@ -168,6 +168,25 @@
           </layout>
          </widget>
         </item>
+        <item>
+         <widget class="QGroupBox" name="miscGroup">
+          <property name="title">
+           <string>Miscellaneous</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <widget class="QCheckBox" name="trashCheck">
+             <property name="text">
+              <string>Move files to trash</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="dbTab">

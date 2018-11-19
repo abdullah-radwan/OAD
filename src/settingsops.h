@@ -6,24 +6,26 @@
 class SettingsOps{
 
 public:
-    struct snapInfo{QList<QString> files, snapfiles;};
+    struct snapInfo{QStringList files, snapNames, snapTimes;};
 
     QString orbiterPath, backupDir;
 
-    QList<QString> pathsList;
+    QStringList pathsList;
 
-    QMap<QString, QList<QString>> dbMap, ignoredMap;
+    QMap<QString, QStringList> dbMap, ignoredMap;
+
+    bool moveTrash;
 
     SettingsOps();
 
-    SettingsOps(QString orbiterPath, QString backupDir, QList<QString> pathsList,
-                QMap<QString, QList<QString>> dbMap, QMap<QString, QList<QString>> ignoredMap);
+    SettingsOps(QString orbiterPath, QString backupDir, QStringList pathsList,
+                QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap, bool moveTrash);
 
     QString createSnapshot();
 
     snapInfo setSnapshot(QString fileName);
 
-    QString importSnapshot(QList<QString> files, QList<QString> snapFiles, bool checkRes);
+    QString importSnapshot(QStringList files, QStringList snapNames, QStringList snapTimes, bool checkRes);
 
     bool addPath(QString path);
 

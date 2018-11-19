@@ -8,17 +8,18 @@ class ConfigEditor{
 public:
     struct Config{
         QString orbiterPath;
-        QList<QString> pathsList;
-        QMap<QString, QList<QString>> ignoredMap, dbMap;
+        QStringList pathsList;
+        QMap<QString, QStringList> dbMap, ignoredMap;
         QMap<QString, QString> overMap;
+        bool moveTrash;
     };
 
     ConfigEditor();
 
     static Config readConfig();
 
-    static void writeConfig(QString orbiterPath, QList<QString> pathsList, QMap<QString, QList<QString>> ignoredMap,
-                            QMap<QString, QList<QString>> dbMap, QMap<QString, QString> overMap);
+    static void writeConfig(QString orbiterPath, QStringList pathsList, QMap<QString, QStringList> dbMap,
+                            QMap<QString, QStringList> ignoredMap , QMap<QString, QString> overMap, bool moveTrash);
 
 };
 

@@ -9,8 +9,9 @@
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::SettingsWindow){ui->setupUi(this);}
 
-SettingsWindow::SettingsWindow(QWidget *parent, QString orbiterPath, QString backupDir, QList<QString> pathsList,
-                               QMap<QString, QList<QString>> dbMap, QMap<QString, QList<QString>> ignoredMap)
+SettingsWindow::SettingsWindow(QWidget *parent, QString orbiterPath, QString backupDir, QStringList pathsList,
+                               QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
+                               QMap<QString, QString> overMap, bool moveTrash)
 
     : QMainWindow(parent), ui(new Ui::SettingsWindow){
 
@@ -18,16 +19,14 @@ SettingsWindow::SettingsWindow(QWidget *parent, QString orbiterPath, QString bac
 
     setWindowModality(Qt::ApplicationModal);
 
-    settingsOps = SettingsOps(orbiterPath, backupDir, pathsList, dbMap, ignoredMap);
+    settingsOps = SettingsOps(orbiterPath, backupDir, pathsList, dbMap, ignoredMap, moveTrash);
+
+    this->overMap = overMap;
 }
 
 void SettingsWindow::showEvent(QShowEvent *ev){
 
      QMainWindow::showEvent(ev);
-
-     ui->pathsCombo->addItems(settingsOps.pathsList);
-
-     ui->pathsCombo->setCurrentText(settingsOps.orbiterPath);
 
      if(settingsOps.pathsList.isEmpty()){
 
@@ -37,26 +36,41 @@ void SettingsWindow::showEvent(QShowEvent *ev){
 
      }
 
+     QString path = settingsOps.orbiterPath;
+
+     ui->pathsCombo->addItems(settingsOps.pathsList);
+
+     settingsOps.orbiterPath = path;
+
+     ui->pathsCombo->setCurrentIndex(settingsOps.pathsList.indexOf(settingsOps.orbiterPath));
+
+     #ifdef Q_OS_WIN
+     ui->trashCheck->setChecked(settingsOps.moveTrash);
+
+     #else
+     ui->trashCheck->setChecked(false);
+
+     ui->trashCheck->setDisabled(true);
+     #endif
+
      setDbTree();
 
      setIgnTree();
-
 }
 
-void SettingsWindow::on_pathsCombo_currentIndexChanged(const QString &arg1){
+void SettingsWindow::on_pathsCombo_currentTextChanged(const QString &arg1){
 
     settingsOps.orbiterPath = arg1;
 
     settingsOps.backupDir = QDir::currentPath() + "/OrbiterBackup " +
-            QString::number(settingsOps.pathsList.indexOf(settingsOps.orbiterPath)) + "/";
-
+               QString::number(settingsOps.pathsList.indexOf(arg1)) + "/";
 }
 
 void SettingsWindow::on_addPathButton_clicked(){
 
     QString path = QFileDialog::getExistingDirectory(this, "Select Orbiter installation folder", settingsOps.orbiterPath);
 
-    if(path.isEmpty()) {return;};
+    if(path.isEmpty()) return;
 
     path += "/";
 
@@ -125,10 +139,15 @@ void SettingsWindow::on_importButton_clicked(){
         QMessageBox::warning(this, "Select a correct snapshot file", "Please selected a correct snapshot file.");
 
         return;
+
+    } else if(snapInfo.files.first() == "NO_CHANGE") {
+
+        QMessageBox::information(this, "No changes were found", "No changes were made since the snapshot was taken");
+
     }
 
-    QString res = settingsOps.importSnapshot(snapInfo.files, snapInfo.snapfiles,
-                                             checkSnapshot(snapInfo.files, snapInfo.snapfiles));
+    QString res = settingsOps.importSnapshot(snapInfo.files, snapInfo.snapNames, snapInfo.snapTimes,
+                                             checkSnapshot(snapInfo.files, snapInfo.snapNames, snapInfo.snapTimes));
 
     if(res == "NO_BACKUP"){
 
@@ -141,41 +160,37 @@ void SettingsWindow::on_importButton_clicked(){
 
         QMessageBox::information(this, "Snapshot imported successfully", "Snapshot imported successfully");
 
-    } else QMessageBox::information(this, "No changes were found", "No changes were made since the snapshot was taken");
+    }
 
 }
 
-bool SettingsWindow::checkSnapshot(QList<QString> snapFiles, QList<QString> files){
+bool SettingsWindow::checkSnapshot(QStringList files, QStringList snapNames, QStringList snapTimes){
 
-    foreach(QString snapFile, snapFiles){
+    foreach(QString file, files){
 
-        QString snapFileName = snapFile.split("=").first();
+        QString fileName = file.split("=").first();
 
-        QString snapFileTime = snapFile.split("=").last();
+        QString fileTime = file.split("=").last();
 
-        foreach(QString file, files){
+        if((snapNames.contains(fileName, Qt::CaseInsensitive) && snapTimes.contains(fileTime)) ||
+                snapNames.contains(fileName + ".oad", Qt::CaseInsensitive) ||
+                (fileName.endsWith(".oad") && snapNames.contains(fileName.split(".oad").first(), Qt::CaseInsensitive))) {
 
-            QString fileName = file.split("=").first();
+        } else if(snapNames.contains(fileName, Qt::CaseInsensitive)) {
 
-            QString fileTime = file.split("=").last();
+            if(!QFileInfo(settingsOps.backupDir + fileName).isFile()){
 
-            if(file == snapFile || file + ".oad" == snapFile || file == snapFile + ".oad") break;
+                QMessageBox::StandardButtons response = QMessageBox::question(this, "Missing backup file",
+                                                                              fileName + " doesn't have a backup file."
+                                                                                         " Do you want to skip it?");
 
-            else if(fileName == snapFileName){
-
-                if(!QFileInfo(settingsOps.backupDir + fileName).isFile()){
-
-                    QMessageBox::StandardButtons response = QMessageBox::question(this, "Missing backup file",
-                                                                                  fileName + " doesn't have a backup file."
-                                                                                             " Do you want to skip it?");
-
-                    if(response == QMessageBox::No) return true;
-
-                }
+                if(response == QMessageBox::No) return true;
 
             }
 
         }
+
+        QCoreApplication::processEvents();
 
     }
 
@@ -220,7 +235,7 @@ void SettingsWindow::on_removeIgnButton_clicked(){
 
     if(selectedItem->childCount() == 0){
 
-        QList<QString> ignoredList = settingsOps.ignoredMap.value(selectedItem->parent()->text(0));
+        QStringList ignoredList = settingsOps.ignoredMap.value(selectedItem->parent()->text(0));
 
         ignoredList.removeOne(selectedItem->text(0));
 
@@ -245,7 +260,7 @@ void SettingsWindow::setIgnTree(){
 
         ui->ignoredTree->insertTopLevelItem(index, addonItem);
 
-        QList<QString> filesList = settingsOps.ignoredMap.value(addon);
+        QStringList filesList = settingsOps.ignoredMap.value(addon);
 
         QList<QTreeWidgetItem*> items;
 
@@ -258,6 +273,8 @@ void SettingsWindow::setIgnTree(){
     }
 
 }
+
+void SettingsWindow::on_trashCheck_toggled(bool checked) {settingsOps.moveTrash = checked;}
 
 void SettingsWindow::on_addEntryButton_clicked(){
 
@@ -304,7 +321,7 @@ void SettingsWindow::on_removeEntryButton_clicked(){
 
     if(selectedItem->childCount() == 0){
 
-        QList<QString> filesList = settingsOps.dbMap.value(selectedItem->parent()->text(0));
+        QStringList filesList = settingsOps.dbMap.value(selectedItem->parent()->text(0));
 
         filesList.removeOne(selectedItem->text(0));
 
@@ -383,11 +400,37 @@ void SettingsWindow::on_editEntryButton_clicked(){
 
     if(!addDialog.check) return;
 
-    settingsOps.dbMap.remove(oldName);
+    if(addDialog.addonName != oldName) {
 
-    settingsOps.ignoredMap.insert(addDialog.addonName, settingsOps.ignoredMap.value(oldName));
+        settingsOps.dbMap.remove(oldName);
 
-    if(addDialog.addonName != oldName) settingsOps.ignoredMap.remove(oldName);
+        if(settingsOps.ignoredMap.contains(oldName)) {
+
+            settingsOps.ignoredMap.insert(addDialog.addonName, settingsOps.ignoredMap.value(oldName));
+
+            settingsOps.ignoredMap.remove(oldName);
+
+        }
+
+        if(overMap.keys().contains(oldName)) {
+
+            QString tempValue = overMap.value(oldName);
+
+            overMap.remove(oldName);
+
+            overMap.insert(addDialog.addonName, oldName);
+
+        } else if(overMap.values().contains(oldName)) {
+
+            QString tempName = overMap.key(oldName);
+
+            overMap.remove(tempName);
+
+            overMap.insert(tempName, addDialog.addonName);
+
+        }
+
+    }
 
     settingsOps.dbMap.insert(addDialog.addonName, addDialog.addonFiles.split(","));
 
@@ -409,7 +452,7 @@ void SettingsWindow::setDbTree(){
 
         ui->dbTree->insertTopLevelItem(index, addonItem);
 
-        QList<QString> filesList = settingsOps.dbMap.value(addon);
+        QStringList filesList = settingsOps.dbMap.value(addon);
 
         QList<QTreeWidgetItem*> items;
 
@@ -432,3 +475,4 @@ void SettingsWindow::closeEvent(QCloseEvent *bar){
 }
 
 SettingsWindow::~SettingsWindow(){delete ui;}
+

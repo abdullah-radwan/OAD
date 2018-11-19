@@ -1,14 +1,15 @@
 #include "settingsops.h"
 #include "addonsops.h"
-#include <quazip/JlCompress.h>
+#include <JlCompress.h>
 #include <QDateTime>
 #include <QDirIterator>
 #include <QTextStream>
+#include <QCoreApplication>
 
 SettingsOps::SettingsOps(){}
 
-SettingsOps::SettingsOps(QString orbiterPath, QString backupDir, QList<QString> pathsList,
-                         QMap<QString, QList<QString>> dbMap, QMap<QString, QList<QString>> ignoredMap){
+SettingsOps::SettingsOps(QString orbiterPath, QString backupDir, QStringList pathsList,
+                         QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap, bool moveTrash){
 
     this->orbiterPath = orbiterPath;
 
@@ -19,6 +20,8 @@ SettingsOps::SettingsOps(QString orbiterPath, QString backupDir, QList<QString> 
     this->dbMap = dbMap;
 
     this->ignoredMap = ignoredMap;
+
+    this->moveTrash = moveTrash;
 }
 
 bool SettingsOps::addPath(QString path){
@@ -42,7 +45,7 @@ bool SettingsOps::rmPath(int index){
 
     QString path = QDir::currentPath() + "/OrbiterBackup ";
 
-    QDir(path + QString::number(index)).removeRecursively();
+    AddonsOps::moveTrash(path + QString::number(index), moveTrash);
 
     for(int counter = 1; counter < pathsList.count(); counter++){
 
@@ -57,7 +60,6 @@ bool SettingsOps::rmPath(int index){
     if(pathsList.isEmpty()) return true;
 
     return false;
-
 }
 
 QString SettingsOps::createSnapshot(){
@@ -89,6 +91,8 @@ QString SettingsOps::createSnapshot(){
 
         }
 
+        QCoreApplication::processEvents();
+
     }
 
     file.flush();
@@ -96,7 +100,6 @@ QString SettingsOps::createSnapshot(){
     file.close();
 
     return fileName;
-
 }
 
 SettingsOps::snapInfo SettingsOps::setSnapshot(QString fileName){
@@ -109,9 +112,19 @@ SettingsOps::snapInfo SettingsOps::setSnapshot(QString fileName){
 
     if(in.readLine() != "SNAPSHOT_OAD") return {};
 
-    QList<QString> files, snapFiles;
+    QStringList files, snapNames, snapTimes, snapFiles;
 
-    while(!in.atEnd()){snapFiles.append(in.readLine());}
+    while(!in.atEnd()) {
+
+        QString line = in.readLine();
+
+        snapNames.append(line.split("=").first());
+
+        snapTimes.append(line.split("=").last());
+
+        snapFiles.append(line);
+
+    }
 
     QDirIterator it(orbiterPath, QDirIterator::Subdirectories);
 
@@ -131,79 +144,89 @@ SettingsOps::snapInfo SettingsOps::setSnapshot(QString fileName){
 
         }
 
+        QCoreApplication::processEvents();
+
     }
 
     files.sort(); snapFiles.sort();
 
-    return {files, snapFiles};
+    if(files == snapFiles) return {{"NO_CHANGE"}, {"NO_CHANGE"}, {"NO_CHANGE"}};
 
+    return {files, snapNames, snapTimes};
 }
 
-QString SettingsOps::importSnapshot(QList<QString> files, QList<QString> snapFiles, bool checkRes){
+QString SettingsOps::importSnapshot(QStringList files, QStringList snapNames, QStringList snapTimes, bool checkRes){
 
-    if(files != snapFiles){
+    if(checkRes) return "NO_BACKUP";
 
-        if(checkRes) return "NO_BACKUP";
+    foreach(QString snapName, snapNames) {
 
-        foreach(QString snapFile, snapFiles){
+        QFileInfo snapInfo(backupDir + snapName);
 
-            QString snapFileName = snapFile.split("=").first();
+        if(snapInfo.isFile() && !QFileInfo(orbiterPath + snapName).isFile()){
 
-            QString snapFileTime = snapFile.split("=").last();
+            QDir(orbiterPath + snapName.remove(snapName.split("/").last())).mkpath(".");
 
-            foreach(QString file, files){
+            QFile::copy(snapInfo.filePath(), orbiterPath + QDir(backupDir).relativeFilePath(snapInfo.filePath()));
 
-                QString fileName = file.split("=").first();
+            AddonsOps::moveTrash(snapInfo.filePath(), moveTrash);
 
-                QString fileTime = file.split("=").last();
-
-                if(file == snapFile){break;}
-
-                else if(fileName == snapFileName){
-
-                    QFile::remove(orbiterPath + fileName);
-
-                    QFile::copy(backupDir + fileName, orbiterPath + fileName);
-
-                    QFile::remove(backupDir + fileName);
-
-                }
-
-                else if(fileName + ".oad" == snapFileName){
-
-                    QFile::rename(orbiterPath + fileName, orbiterPath + fileName + ".oad");
-
-                }
-
-                else if(fileName == snapFileName + ".oad"){
-
-                    QFile::rename(orbiterPath + fileName, orbiterPath + fileName.remove(".oad"));
-
-                }
-
-                else{
-
-                    QFile::remove(orbiterPath + fileName);
-
-                    QDir fileDir = QFileInfo(orbiterPath + fileName).dir();
-
-                    while(fileDir.rmdir(".")){fileDir.cdUp();}
-
-                }
-
-            }
+            while(snapInfo.dir().rmdir(".")) snapInfo.dir().cdUp();
 
         }
 
-        return "SUCCESS";
+        QCoreApplication::processEvents();
 
-    } else return "NO_CHANGES";
+    }
 
+    foreach(QString file, files){
+
+        QString fileName = file.split("=").first();
+
+        QString fileTime = file.split("=").last();
+
+        if(snapNames.contains(fileName, Qt::CaseInsensitive) && snapTimes.contains(fileTime)) {
+
+        } else if(snapNames.contains(fileName, Qt::CaseInsensitive)) {
+
+            AddonsOps::moveTrash(orbiterPath + fileName, moveTrash);
+
+            QFile::copy(backupDir + fileName, orbiterPath + fileName);
+
+            AddonsOps::moveTrash(backupDir + fileName, moveTrash);
+
+            QDir parentDir(backupDir + fileName.left(fileName.lastIndexOf("/")));
+
+            while(parentDir.rmdir(".")) parentDir.cdUp();
+
+        } else if(fileName.endsWith(".oad") && snapNames.contains(fileName.split(".oad").first(), Qt::CaseInsensitive)) {
+
+            QFile::rename(orbiterPath + fileName, orbiterPath + fileName + ".oad");
+
+        } else if(snapNames.contains(fileName + ".oad", Qt::CaseInsensitive)) {
+
+            QFile::rename(orbiterPath + fileName, orbiterPath + fileName.remove(".oad"));
+
+        } else {
+
+            AddonsOps::moveTrash(orbiterPath + fileName, moveTrash);
+
+            QDir parentDir(orbiterPath + fileName.left(fileName.lastIndexOf("/")));
+
+            while(parentDir.rmdir(".")) parentDir.cdUp();
+
+        }
+
+        QCoreApplication::processEvents();
+
+    }
+
+    return "SUCCESS";
 }
 
 void SettingsOps::addIgn(QString addonName, QString addonFiles){
 
-    QList<QString> ignoredList;
+    QStringList ignoredList;
 
     if(!ignoredMap.value(addonName).isEmpty()){
 
@@ -214,13 +237,19 @@ void SettingsOps::addIgn(QString addonName, QString addonFiles){
     } else ignoredList = addonFiles.toLower().split(",");
 
     ignoredMap.insert(addonName, ignoredList);
-
 }
 
 void SettingsOps::addEntry(QString addonName, QString addonPath, QString addonFiles,
                            bool folderChecked, bool fileChecked, bool removeDir){
 
-    if(folderChecked) dbMap.insert(addonName, AddonsOps::scanDirectory(addonPath));
+    if(folderChecked) {
+
+        AddonsOps::scanDirectory(addonPath);
+
+        dbMap.insert(addonName, AddonsOps::scanDirectory(addonPath));
+
+        if(removeDir) AddonsOps::moveTrash(addonPath, moveTrash);
+    }
 
     else if(fileChecked){
 
@@ -252,12 +281,9 @@ void SettingsOps::addEntry(QString addonName, QString addonPath, QString addonFi
 
             dbMap.insert(addonName, AddonsOps::scanDirectory(addonPath));
 
-            QDir(addonPath).removeRecursively();
-
         }
 
-        if(removeDir) QFile::remove(oldPath);
+        if(removeDir) AddonsOps::moveTrash(oldPath, moveTrash);
 
     } else dbMap.insert(addonName, addonFiles.split(","));
-
 }

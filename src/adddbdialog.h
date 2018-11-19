@@ -28,13 +28,13 @@ private slots:
 
     void on_fileButton_clicked();
 
-                                   void on_filesRadio_clicked();
+    void on_filesRadio_clicked();
 
-                                                                  void on_fileRadio_clicked();
+    void on_fileRadio_clicked();
 
-                                                                                                 void on_folderRadio_clicked();
+    void on_folderRadio_clicked();
 
-                               private:
+private:
     Ui::AddDbDialog *ui;
 
 };

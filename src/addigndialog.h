@@ -10,7 +10,7 @@ class AddIgnDialog : public QDialog {Q_OBJECT
 public:
     QString addonName, addonFiles;
 
-    QList<QString> addons;
+    QStringList addons;
 
     bool check;
 

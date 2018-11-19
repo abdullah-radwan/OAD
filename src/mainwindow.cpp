@@ -22,7 +22,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     if(!orbiterPath.isEmpty()) backupDir = QDir::currentPath() +
             "/OrbiterBackup " + QString::number(pathsList.indexOf(orbiterPath)) + "/";
 
-    addonsOps = AddonsOps(orbiterPath, backupDir, config.ignoredMap, config.dbMap, config.overMap);
+    addonsOps = AddonsOps(orbiterPath, backupDir, config.dbMap,
+                          config.ignoredMap, config.overMap, config.moveTrash);
 
     updateAddonsList();
 
@@ -125,8 +126,17 @@ void MainWindow::on_installButton_clicked(){
 
     }
 
-    addonsOps.installAddon(installDialog.addonName, installDialog.addonPath, installDialog.compChecked,
+    bool res = addonsOps.installAddon(installDialog.addonName, installDialog.addonPath, installDialog.compChecked,
                        installDialog.installSources, installDialog.removeAddonDir);
+
+    if(!res) {
+
+        QMessageBox::warning(this, "Add-on installation failed",
+                                 installDialog.addonName + " installation failed");
+
+        return;
+
+    }
 
     updateAddonsList();
 
@@ -169,7 +179,8 @@ void MainWindow::on_uninstallButton_clicked(){
 
 void MainWindow::on_actionSettings_triggered(){
 
-    SettingsWindow settingsWin(this, orbiterPath, addonsOps.backupDir, pathsList, addonsOps.dbMap, addonsOps.ignoredMap);
+    SettingsWindow settingsWin(this, orbiterPath, addonsOps.backupDir, pathsList,
+                               addonsOps.dbMap, addonsOps.ignoredMap, addonsOps.overMap, addonsOps.moveToTrash);
 
     settingsWin.show();
 
@@ -193,6 +204,10 @@ void MainWindow::on_actionSettings_triggered(){
 
     addonsOps.ignoredMap = settingsWin.settingsOps.ignoredMap;
 
+    addonsOps.overMap = settingsWin.overMap;
+
+    addonsOps.moveToTrash = settingsWin.settingsOps.moveTrash;
+
     updateAddonsList();
 
 }
@@ -204,8 +219,8 @@ void MainWindow::on_actionAbout_triggered(){
     QMessageBox::about(this, "About Orbiter Addons Manager","Orbiter Addons Manager <br>"
                                                             "A tool to organize your Orbiter add-ons <br> <br>"
 
-                                                            "Version: 1.0.3 <br>"
-                                                            "Build date: Oct 2018 <br>"
+                                                            "Version: 1.0.4 <br>"
+                                                            "Build date: Nov 2018 <br>"
                                                             "Check for updates here: "
                                                             "<a href='http://bit.ly/2QKVXqV'>http://bit.ly/2QKVXqV</a> <br> <br>"
 
@@ -215,7 +230,8 @@ void MainWindow::on_actionAbout_triggered(){
 
 MainWindow::~MainWindow(){
 
-    ConfigEditor::writeConfig(orbiterPath, pathsList, addonsOps.ignoredMap, addonsOps.dbMap, addonsOps.overMap);
+    ConfigEditor::writeConfig(orbiterPath, pathsList, addonsOps.dbMap, addonsOps.ignoredMap,
+                              addonsOps.overMap, addonsOps.moveToTrash);
 
     delete ui;
 }

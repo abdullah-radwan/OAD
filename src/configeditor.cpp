@@ -8,19 +8,17 @@ ConfigEditor::Config ConfigEditor::readConfig(){
     // Read the config file from config.cfg file in main program directory
     QSettings settings("config.cfg", QSettings::IniFormat);
 
-    QString orbiterPath;
-
-    QList<QString> pathsList;
-
     settings.beginGroup("General");
 
-    orbiterPath = settings.value("OrbiterPath").toString();
+    QString orbiterPath = settings.value("OrbiterPath").toString();
 
-    pathsList = settings.value("PathsList").toStringList();
+    QStringList pathsList = settings.value("PathsList").toStringList();
+
+    bool moveTrash = settings.value("MoveTrash").toBool();
 
     settings.endGroup();
 
-    QMap<QString, QList<QString>> ignoredMap, dbMap;
+    QMap<QString, QStringList> ignoredMap, dbMap;
 
     QMap<QString, QString> overMap;
 
@@ -49,12 +47,12 @@ ConfigEditor::Config ConfigEditor::readConfig(){
     settings.endGroup();
 
     // Return data as config struct
-    return {orbiterPath, pathsList, ignoredMap, dbMap, overMap};
+    return {orbiterPath, pathsList, dbMap, ignoredMap, overMap, moveTrash};
 
 }
 
-void ConfigEditor::writeConfig(QString orbiterPath, QList<QString> pathsList, QMap<QString, QList<QString>> ignoredMap,
-                               QMap<QString, QList<QString>> dbMap, QMap<QString, QString> overMap){
+void ConfigEditor::writeConfig(QString orbiterPath, QStringList pathsList, QMap<QString, QStringList> dbMap,
+                               QMap<QString, QStringList> ignoredMap,QMap<QString, QString> overMap, bool moveTrash){
 
     QSettings settings("config.cfg", QSettings::IniFormat);
 
@@ -66,11 +64,13 @@ void ConfigEditor::writeConfig(QString orbiterPath, QList<QString> pathsList, QM
 
     settings.setValue("PathsList", QVariant(pathsList));
 
+    settings.setValue("MoveTrash", moveTrash);
+
     settings.endGroup();
 
     settings.beginGroup("IgnoredMap");
 
-    QMap<QString, QList<QString>>::const_iterator ignIterator = ignoredMap.constBegin();
+    QMap<QString, QStringList>::const_iterator ignIterator = ignoredMap.constBegin();
 
     while (ignIterator != ignoredMap.constEnd()) {
 
@@ -84,7 +84,7 @@ void ConfigEditor::writeConfig(QString orbiterPath, QList<QString> pathsList, QM
 
     settings.beginGroup("DatabaseMap");
 
-    QMap<QString, QList<QString>>::const_iterator dbIterator = dbMap.constBegin();
+    QMap<QString, QStringList>::const_iterator dbIterator = dbMap.constBegin();
 
     while (dbIterator != dbMap.constEnd()) {
 

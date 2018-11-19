@@ -35,7 +35,7 @@ private:
 
     QString orbiterPath;
 
-    QList<QString> pathsList;
+    QStringList pathsList;
 
     AddonsOps addonsOps;
 
