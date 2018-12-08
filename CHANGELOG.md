@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.0.4a - 2018-12-08
+
+### Added
+- New add-ons to the database.
+
+### Fixed
+- Parent folder isn't detected correctly in zip file.
+
 ## 1.0.4 - 2018-11-19
 
 ### Added
@@ -51,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Faulty config writer.
 
 ### Changed
-- Install/Add dialog renamed to install dialog, and can be used only to install. To add an add-on, add it in the database editor.
+- Install/Add dialog renamed to install dialog, and can be used only to install.
+ To add an add-on, add it in the database editor.
 
 
 ## 1.0.1 - 2018-09-21

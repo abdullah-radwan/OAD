@@ -2,7 +2,6 @@
 #include <QDirIterator>
 #include <JlCompress.h>
 #include <QCoreApplication>
-#include <QDebug>
 
 static QStringList orbiterFolders = {"config", "doc", "flights", "html", "images", "install", "meshes", "missions",
                                      "modules", "orbitersdk", "scenarios", "script", "textures", "textures2", "utils"};
@@ -42,8 +41,6 @@ AddonsOps::addonsLists AddonsOps::scanAddons(){
         foreach(QString file, dbMap.value(addon)){
 
             if(!checkIgn(addon, file)){
-
-                qDebug() << orbiterPath + file << QFileInfo::exists(orbiterPath + file);
 
                 if(QFileInfo::exists(orbiterPath + file)) enabledExists = true;
 
@@ -238,25 +235,25 @@ QString AddonsOps::checkCompFile(QString path){
 
     foreach(QString file, filesList) compList.append(file.split("/").first().toLower());
 
-    int index = 0;
+    int index = 99999;
 
     QString indexFile;
 
     foreach(QString folder, orbiterFolders){
 
-        if(compList.contains(folder)) return "";
+        if(compList.contains(folder, Qt::CaseInsensitive)) return "";
 
         foreach(QString file, filesList){
 
             QStringList listFile = file.toLower().split("/");
 
-            if(listFile.contains(folder)){
+            if(listFile.contains(folder, Qt::CaseInsensitive)){
 
-                if(listFile.indexOf(folder) < index) {
+                if(listFile.indexOf(folder, Qt::CaseInsensitive) < index) {
 
                     indexFile = "";
 
-                    index = listFile.indexOf(folder);
+                    index = listFile.indexOf(folder, Qt::CaseInsensitive);
 
                     for(int i = 0; i < index; i++) indexFile += listFile.at(i) + "/";
 
@@ -268,7 +265,7 @@ QString AddonsOps::checkCompFile(QString path){
 
     }
 
-    if(index != 0) return indexFile;
+    if(index != 99999) return indexFile;
 
     return "";
 
@@ -330,7 +327,9 @@ void AddonsOps::setOverrider(QString addonName, QString addonFile){
 
 void AddonsOps::setDbMap(QString addonName, QStringList addonFiles){
 
-    bool updated, exists = false;
+    bool updated = false;
+
+    bool exists = false;
 
     addonFiles.sort();
 
@@ -366,7 +365,7 @@ void AddonsOps::setDbMap(QString addonName, QStringList addonFiles){
 
             break;
 
-        }
+        } else updated = false;
 
     }
 

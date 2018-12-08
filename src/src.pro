@@ -9,10 +9,8 @@ QT += core gui widgets
 TEMPLATE = app
 TARGET = ../OAD
 
-INCLUDEPATH += D:/Qt/zlib-1.2.11
-LIBS += -LD:/Qt/zlib-1.2.11 -lz
-INCLUDEPATH += D:/Qt/quazip-0.7.3/quazip
-LIBS += -LD:/Qt/quazip-0.7.3/quazip/release -lquazip
+LIBS += -lz
+LIBS += -lquazip
 
 DEFINES += QT_DEPRECATED_WARNINGS
 

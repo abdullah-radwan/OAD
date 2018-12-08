@@ -219,8 +219,8 @@ void MainWindow::on_actionAbout_triggered(){
     QMessageBox::about(this, "About Orbiter Addons Manager","Orbiter Addons Manager <br>"
                                                             "A tool to organize your Orbiter add-ons <br> <br>"
 
-                                                            "Version: 1.0.4 <br>"
-                                                            "Build date: Nov 2018 <br>"
+                                                            "Version: 1.0.4a <br>"
+                                                            "Build date: Dec 2018 <br>"
                                                             "Check for updates here: "
                                                             "<a href='http://bit.ly/2QKVXqV'>http://bit.ly/2QKVXqV</a> <br> <br>"
 
