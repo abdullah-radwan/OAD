@@ -11,7 +11,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui
 
 SettingsWindow::SettingsWindow(QWidget *parent, QString orbiterPath, QString backupDir, QStringList pathsList,
                                QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
-                               QMap<QString, QString> overMap, bool moveTrash)
+                               QMap<QString, QString> overMap, bool moveTrash, bool showAll)
 
     : QMainWindow(parent), ui(new Ui::SettingsWindow){
 
@@ -19,9 +19,11 @@ SettingsWindow::SettingsWindow(QWidget *parent, QString orbiterPath, QString bac
 
     setWindowModality(Qt::ApplicationModal);
 
-    settingsOps = SettingsOps(orbiterPath, backupDir, pathsList, dbMap, ignoredMap, moveTrash);
+    settingsOps = SettingsOps(orbiterPath, backupDir, pathsList, dbMap, ignoredMap, overMap, moveTrash);
 
     this->overMap = overMap;
+
+    this->showAll = showAll;
 }
 
 void SettingsWindow::showEvent(QShowEvent *ev){
@@ -53,9 +55,13 @@ void SettingsWindow::showEvent(QShowEvent *ev){
      ui->trashCheck->setDisabled(true);
      #endif
 
+     ui->showCheck->setChecked(showAll);
+
      setDbTree();
 
      setIgnTree();
+
+     setOverTree();
 }
 
 void SettingsWindow::on_pathsCombo_currentTextChanged(const QString &arg1){
@@ -276,8 +282,8 @@ void SettingsWindow::setIgnTree(){
 
 void SettingsWindow::on_trashCheck_toggled(bool checked) {settingsOps.moveTrash = checked;}
 
-void SettingsWindow::on_addEntryButton_clicked(){
-
+void SettingsWindow::on_addEntryButton_clicked()
+{
     AddDbDialog addDialog(this);
 
     addDialog.folderChecked = true;
@@ -295,15 +301,20 @@ void SettingsWindow::on_addEntryButton_clicked(){
 
     }
 
-    settingsOps.addEntry(addDialog.addonName, addDialog.addonPath, addDialog.addonFiles,
+    bool res = settingsOps.addEntry(addDialog.addonName, addDialog.addonPath, addDialog.addonFiles,
                          addDialog.folderChecked, addDialog.fileChecked, addDialog.removeDir);
 
-    setDbTree();
+    if(res) QMessageBox::information(this, addDialog.addonName + " added successfully",
+                                     addDialog.addonName + " added successfully to the database.");
 
+    else QMessageBox::critical(this,  addDialog.addonName + " addition failed",
+                               addDialog.addonName + " addition failed.");
+
+    setDbTree();
 }
 
-void SettingsWindow::on_removeEntryButton_clicked(){
-
+void SettingsWindow::on_removeEntryButton_clicked()
+{
     if(ui->dbTree->selectedItems().isEmpty()){
 
         QMessageBox::warning(this, "Select an add-on", "You must select an add-on to remove it");
@@ -466,13 +477,55 @@ void SettingsWindow::setDbTree(){
 
 }
 
-void SettingsWindow::closeEvent(QCloseEvent *bar){
+void SettingsWindow::on_remOverButton_clicked()
+{
+    if(ui->overTree->selectedItems().isEmpty()){
+
+        QMessageBox::warning(this, "Select an add-on", "You must select an add-on to remove it");
+
+        return;
+    }
+
+    QMessageBox::StandardButton response = QMessageBox::question(this, "Removition confirm",
+                                            "Are you sure you want to remove the selected item from the override database?");
+
+    if(response == QMessageBox::No) return;
+
+    QTreeWidgetItem *selectedItem = ui->overTree->currentItem();
+
+    overMap.remove(selectedItem->text(1));
+
+    setOverTree();
+}
+
+void SettingsWindow::setOverTree()
+{
+    ui->overTree->clear();
+
+    int index = 0;
+
+    foreach(QString addon, overMap.keys()){
+
+        QTreeWidgetItem *addonItem = new QTreeWidgetItem();
+
+        addonItem->setText(0, addon);
+
+        addonItem->setText(1, overMap.value(addon));
+
+        ui->overTree->insertTopLevelItem(index, addonItem);
+
+        index++;
+    }
+}
+
+void SettingsWindow::closeEvent(QCloseEvent *bar)
+{
+
+    showAll = ui->showCheck->isChecked();
 
     emit closed();
 
     bar->accept();
-
 }
 
 SettingsWindow::~SettingsWindow(){delete ui;}
-

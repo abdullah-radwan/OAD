@@ -1,6 +1,5 @@
 #include "settingsops.h"
 #include "addonsops.h"
-#include <JlCompress.h>
 #include <QDateTime>
 #include <QDirIterator>
 #include <QTextStream>
@@ -9,7 +8,8 @@
 SettingsOps::SettingsOps(){}
 
 SettingsOps::SettingsOps(QString orbiterPath, QString backupDir, QStringList pathsList,
-                         QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap, bool moveTrash){
+                         QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
+                         QMap<QString, QString> overMap, bool moveTrash){
 
     this->orbiterPath = orbiterPath;
 
@@ -20,6 +20,8 @@ SettingsOps::SettingsOps(QString orbiterPath, QString backupDir, QStringList pat
     this->dbMap = dbMap;
 
     this->ignoredMap = ignoredMap;
+
+    this->overMap = overMap;
 
     this->moveTrash = moveTrash;
 }
@@ -239,11 +241,10 @@ void SettingsOps::addIgn(QString addonName, QString addonFiles){
     ignoredMap.insert(addonName, ignoredList);
 }
 
-void SettingsOps::addEntry(QString addonName, QString addonPath, QString addonFiles,
+bool SettingsOps::addEntry(QString addonName, QString addonPath, QString addonFiles,
                            bool folderChecked, bool fileChecked, bool removeDir){
 
     if(folderChecked) {
-
         AddonsOps::scanDirectory(addonPath);
 
         dbMap.insert(addonName, AddonsOps::scanDirectory(addonPath));
@@ -251,8 +252,8 @@ void SettingsOps::addEntry(QString addonName, QString addonPath, QString addonFi
         if(removeDir) AddonsOps::moveTrash(addonPath, moveTrash);
     }
 
-    else if(fileChecked){
-
+    else if(fileChecked)
+    {
         QString oldPath = addonPath;
 
         QString res = AddonsOps::checkCompFile(addonPath);
@@ -263,7 +264,7 @@ void SettingsOps::addEntry(QString addonName, QString addonPath, QString addonFi
 
             QDir(tempPath).mkdir(".");
 
-            JlCompress::extractDir(addonPath, tempPath);
+            if(!AddonsOps::extract(addonPath, tempPath)) return false;
 
             AddonsOps::scanDirectory(tempPath);
 
@@ -273,7 +274,7 @@ void SettingsOps::addEntry(QString addonName, QString addonPath, QString addonFi
 
         } else {
 
-            JlCompress::extractDir(addonPath, QDir::currentPath());
+            if(!AddonsOps::extract(addonPath, QDir::currentPath())) return false;
 
             addonPath = QDir::currentPath() + "/" + res;
 
@@ -286,4 +287,6 @@ void SettingsOps::addEntry(QString addonName, QString addonPath, QString addonFi
         if(removeDir) AddonsOps::moveTrash(oldPath, moveTrash);
 
     } else dbMap.insert(addonName, addonFiles.split(","));
+
+    return true;
 }

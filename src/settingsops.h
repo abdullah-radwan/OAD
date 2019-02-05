@@ -14,12 +14,15 @@ public:
 
     QMap<QString, QStringList> dbMap, ignoredMap;
 
+    QMap<QString, QString> overMap;
+
     bool moveTrash;
 
     SettingsOps();
 
     SettingsOps(QString orbiterPath, QString backupDir, QStringList pathsList,
-                QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap, bool moveTrash);
+                QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
+                QMap<QString, QString> overMap, bool moveTrash);
 
     QString createSnapshot();
 
@@ -33,8 +36,10 @@ public:
 
     void addIgn(QString addonName, QString addonFiles);
 
-    void addEntry(QString addonName, QString addonPath, QString addonFiles,
+    bool addEntry(QString addonName, QString addonPath, QString addonFiles,
                   bool folderChecked, bool fileChecked, bool removeDir);
+
+    void remOver(QString addonName);
 };
 
 #endif // SETTINGSOPS_H

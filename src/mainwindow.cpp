@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "configeditor.h"
 #include "installdialog.h"
+#include "opsdialog.h"
 #include "addonsops.h"
 #include <QDir>
 #include <QMessageBox>
@@ -23,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             "/OrbiterBackup " + QString::number(pathsList.indexOf(orbiterPath)) + "/";
 
     addonsOps = AddonsOps(orbiterPath, backupDir, config.dbMap,
-                          config.ignoredMap, config.overMap, config.moveTrash);
+                          config.ignoredMap, config.overMap, config.moveTrash, false);
 
     updateAddonsList();
 
@@ -86,7 +87,16 @@ void MainWindow::on_enableButton_clicked(){
 
     }
 
-    addonsOps.enableAddon(ui->disabledAddonsList->currentItem()->text());
+    QString addonName = ui->disabledAddonsList->currentItem()->text();
+
+    OpsDialog opsDialog(this, "Enabling " + addonName,
+                        "Enabling " + addonName + "...");
+
+    opsDialog.show();
+
+    addonsOps.enableAddon(addonName);
+
+    opsDialog.deleteLater();
 
     updateAddonsList();
 }
@@ -101,7 +111,16 @@ void MainWindow::on_disableButton_clicked(){
 
     }
 
-    addonsOps.disableAddon(ui->enabledAddonsList->currentItem()->text());
+    QString addonName = ui->enabledAddonsList->currentItem()->text();
+
+    OpsDialog opsDialog(this, "Disabling " + addonName,
+                        "Disabling " + addonName + "...");
+
+    opsDialog.show();
+
+    addonsOps.disableAddon(addonName);
+
+    opsDialog.deleteLater();
 
     updateAddonsList();
 }
@@ -126,16 +145,30 @@ void MainWindow::on_installButton_clicked(){
 
     }
 
-    bool res = addonsOps.installAddon(installDialog.addonName, installDialog.addonPath, installDialog.compChecked,
+    OpsDialog opsDialog(this, "Installing " + installDialog.addonName,
+                               "Installing " + installDialog.addonName + "...");
+
+    opsDialog.show();
+
+    int res = addonsOps.installAddon(installDialog.addonName, installDialog.addonPath, installDialog.compChecked,
                        installDialog.installSources, installDialog.removeAddonDir);
 
-    if(!res) {
+    opsDialog.deleteLater();
 
-        QMessageBox::warning(this, "Add-on installation failed",
-                                 installDialog.addonName + " installation failed");
-
-        return;
-
+    switch (res) {
+    // Failed
+    case -1:
+        QMessageBox::critical(this, "Add-on installation failed",
+                                           installDialog.addonName + " installation failed");
+       return;
+    // Already exists
+    case 0:
+        QMessageBox::warning(this, "Add-on already installed",
+                                           installDialog.addonName + " is already installed");
+       return;
+    // Sucess
+    case 1:
+        break;
     }
 
     updateAddonsList();
@@ -161,7 +194,14 @@ void MainWindow::on_uninstallButton_clicked(){
 
     if(response == QMessageBox::No) return;
 
+    OpsDialog opsDialog(this, "Uninstalling " + addonName,
+                        "Uninstalling " + addonName + "...");
+
+    opsDialog.show();
+
     QString result = addonsOps.uninstallAddon(addonName);
+
+    opsDialog.deleteLater();
 
     if(!result.isEmpty()){
 
@@ -180,7 +220,8 @@ void MainWindow::on_uninstallButton_clicked(){
 void MainWindow::on_actionSettings_triggered(){
 
     SettingsWindow settingsWin(this, orbiterPath, addonsOps.backupDir, pathsList,
-                               addonsOps.dbMap, addonsOps.ignoredMap, addonsOps.overMap, addonsOps.moveToTrash);
+                               addonsOps.dbMap, addonsOps.ignoredMap, addonsOps.overMap,
+                               addonsOps.moveToTrash, addonsOps.showAll);
 
     settingsWin.show();
 
@@ -208,6 +249,8 @@ void MainWindow::on_actionSettings_triggered(){
 
     addonsOps.moveToTrash = settingsWin.settingsOps.moveTrash;
 
+    addonsOps.showAll = settingsWin.showAll;
+
     updateAddonsList();
 
 }
@@ -219,17 +262,17 @@ void MainWindow::on_actionAbout_triggered(){
     QMessageBox::about(this, "About Orbiter Addons Manager","Orbiter Addons Manager <br>"
                                                             "A tool to organize your Orbiter add-ons <br> <br>"
 
-                                                            "Version: 1.0.4a <br>"
-                                                            "Build date: Dec 2018 <br>"
-                                                            "Check for updates here: "
-                                                            "<a href='http://bit.ly/2QKVXqV'>http://bit.ly/2QKVXqV</a> <br> <br>"
+                                                            "Version: 1.0.5 Beta <br>"
+                                                            "Build date: Feb 2019 <br>"
+                                                            "Check for updates on <a href='https://github.com/abdullah-radwan/OAD/releases/latest'>"
+                                                            "Github</a>. <br> <br>"
 
                                                             "Copyright © Abdullah Radwan <br>"
                                                             "Icon by icons8.com");
 }
 
-MainWindow::~MainWindow(){
-
+MainWindow::~MainWindow()
+{
     ConfigEditor::writeConfig(orbiterPath, pathsList, addonsOps.dbMap, addonsOps.ignoredMap,
                               addonsOps.overMap, addonsOps.moveToTrash);
 

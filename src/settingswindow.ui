@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>450</width>
-    <height>444</height>
+    <height>536</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -177,10 +177,17 @@
            <item>
             <widget class="QCheckBox" name="trashCheck">
              <property name="text">
-              <string>Move files to trash</string>
+              <string>Move files to recycle bin</string>
              </property>
              <property name="checked">
               <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="showCheck">
+             <property name="text">
+              <string>Show all add-ons in the database</string>
              </property>
             </widget>
            </item>
@@ -245,6 +252,48 @@
            <string>Edit</string>
           </property>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="overTab">
+       <attribute name="title">
+        <string>Override</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <widget class="QTreeWidget" name="overTree">
+          <property name="columnCount">
+           <number>2</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>Add-on</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Override add-on</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="overButtonLayout">
+          <item>
+           <widget class="QPushButton" name="addOverButton">
+            <property name="text">
+             <string>Add</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="remOverButton">
+            <property name="text">
+             <string>Remove</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>

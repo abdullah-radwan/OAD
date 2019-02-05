@@ -14,11 +14,13 @@ public:
 
     SettingsOps settingsOps;
 
+    bool showAll;
+
     explicit SettingsWindow(QWidget *parent = nullptr);
 
     SettingsWindow(QWidget *parent, QString orbiterPath, QString backupDir, QStringList pathsList,
                    QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
-                   QMap<QString, QString> overMap, bool moveTrash);
+                   QMap<QString, QString> overMap, bool moveTrash, bool showAll);
 
     ~SettingsWindow();
 
@@ -48,6 +50,8 @@ private slots:
 
     void on_pathsCombo_currentTextChanged(const QString &arg1);
 
+    void on_remOverButton_clicked();
+
 signals:
     void closed();
 
@@ -59,6 +63,8 @@ private:
     void setDbTree();
 
     void setIgnTree();
+
+    void setOverTree();
 
     QString scanDir(QString path);
 

@@ -5,7 +5,6 @@
 #include "settingswindow.h"
 #include <QMainWindow>
 
-
 namespace Ui {class MainWindow;}
 
 class MainWindow : public QMainWindow{Q_OBJECT

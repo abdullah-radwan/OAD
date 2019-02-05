@@ -8,18 +8,19 @@ class AddonsOps{
 public:
     QString orbiterPath, backupDir;
 
-    QMap<QString, QStringList> dbMap, ignoredMap;
+    QMap<QString, QStringList> dbMap, ignoredMap/*, installedMap, overMap/*/;
 
     QMap<QString, QString> overMap;
 
-    bool moveToTrash;
+    bool moveToTrash, showAll;
 
     struct addonsLists{QStringList enabledAddons, disabledAddons;};
 
     AddonsOps();
 
     AddonsOps(QString orbiterPath, QString backupDir, QMap<QString, QStringList> dbMap,
-              QMap<QString, QStringList> ignoredMap, QMap<QString, QString> overMap, bool moveTrash);
+              QMap<QString, QStringList> ignoredMap, QMap<QString, QString> overMap,
+              bool moveTrash, bool showAll);
 
     addonsLists scanAddons();
 
@@ -27,7 +28,7 @@ public:
 
     void disableAddon(QString name);
 
-    bool installAddon(QString name, QString path, bool compChecked, bool installSources, bool removeAddonDir);
+    int installAddon(QString name, QString path, bool compChecked, bool installSources, bool removeAddonDir);
 
     QString uninstallAddon(QString name);
 
@@ -36,6 +37,8 @@ public:
     static QString checkCompFile(QString path);
 
     static void moveTrash(QString file, bool moveTrash);
+
+    static bool extract(QString archivePath, QString extractPath);
 
 private:
     void setOverrider(QString addonName, QString addonFile);
