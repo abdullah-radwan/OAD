@@ -13,8 +13,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++11
 
-INCLUDEPATH += D:/Qt/libarchive-3.3.3/libarchive
-LIBS += -LD:/Qt/libarchive-3.3.3/libarchive -larchive
+LIBS += -larchive
 
 include(../libs/QArchive/QArchive.pri)
 
