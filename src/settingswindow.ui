@@ -13,12 +13,15 @@
   <property name="windowTitle">
    <string>Settings - Orbiter Addons Manager</string>
   </property>
+  <property name="statusTip">
+   <string>Move the removed files to recycle bin.</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="generalTab">
        <attribute name="title">
@@ -263,16 +266,11 @@
         <item>
          <widget class="QTreeWidget" name="overTree">
           <property name="columnCount">
-           <number>2</number>
+           <number>1</number>
           </property>
           <column>
            <property name="text">
-            <string>Add-on</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Override add-on</string>
+            <string>Add-ons</string>
            </property>
           </column>
          </widget>
@@ -280,14 +278,10 @@
         <item>
          <layout class="QHBoxLayout" name="overButtonLayout">
           <item>
-           <widget class="QPushButton" name="addOverButton">
-            <property name="text">
-             <string>Add</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="remOverButton">
+            <property name="statusTip">
+             <string>Remove the selected add-on</string>
+            </property>
             <property name="text">
              <string>Remove</string>
             </property>

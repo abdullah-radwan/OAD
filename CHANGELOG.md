@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.0.5 - 2019-03-05
+Stable release.
+
+### Added
+- Quazip with threading.
+- Allow multiple add-ons to override one add-on.
+- Detect if the add-on is already installed.
+- Show a message if uninstallation failed.
+
+### Removed
+- QArchive due to some problems.
+
 ## 1.0.5 Beta - 2019-02-05
 First release of beta.
 

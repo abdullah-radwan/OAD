@@ -2,530 +2,505 @@
 #include "ui_settingswindow.h"
 #include "addigndialog.h"
 #include "adddbdialog.h"
+#include "opsdialog.h"
 #include <settingsops.h>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QCloseEvent>
 
-SettingsWindow::SettingsWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::SettingsWindow){ui->setupUi(this);}
+SettingsWindow::SettingsWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::SettingsWindow) { ui->setupUi(this); }
 
 SettingsWindow::SettingsWindow(QWidget *parent, QString orbiterPath, QString backupDir, QStringList pathsList,
-                               QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
-                               QMap<QString, QString> overMap, bool moveTrash, bool showAll)
+	QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
+	QMap<QString, QStringList> overMap, bool moveTrash, bool showAll)
+	: QMainWindow(parent), ui(new Ui::SettingsWindow)
+{
+	ui->setupUi(this);
 
-    : QMainWindow(parent), ui(new Ui::SettingsWindow){
+	setWindowModality(Qt::ApplicationModal);
 
-    ui->setupUi(this);
+	settingsOps = SettingsOps(orbiterPath, backupDir, pathsList, dbMap, ignoredMap, overMap, moveTrash);
 
-    setWindowModality(Qt::ApplicationModal);
-
-    settingsOps = SettingsOps(orbiterPath, backupDir, pathsList, dbMap, ignoredMap, overMap, moveTrash);
-
-    this->overMap = overMap;
-
-    this->showAll = showAll;
+	this->showAll = showAll;
 }
 
-void SettingsWindow::showEvent(QShowEvent *ev){
+void SettingsWindow::showEvent(QShowEvent *ev)
+{
+	QMainWindow::showEvent(ev);
 
-     QMainWindow::showEvent(ev);
+	if (settingsOps.pathsList.isEmpty())
+	{
+		ui->snapBox->setDisabled(true);
 
-     if(settingsOps.pathsList.isEmpty()){
+		ui->removePathButton->setDisabled(true);
+	}
 
-         ui->snapBox->setDisabled(true);
+	QString path = settingsOps.orbiterPath;
 
-         ui->removePathButton->setDisabled(true);
+	ui->pathsCombo->addItems(settingsOps.pathsList);
 
-     }
+	settingsOps.orbiterPath = path;
 
-     QString path = settingsOps.orbiterPath;
+	ui->pathsCombo->setCurrentIndex(settingsOps.pathsList.indexOf(settingsOps.orbiterPath));
 
-     ui->pathsCombo->addItems(settingsOps.pathsList);
+#ifdef Q_OS_WIN
+	ui->trashCheck->setChecked(settingsOps.moveTrash);
 
-     settingsOps.orbiterPath = path;
+#else
+	ui->trashCheck->setChecked(false);
 
-     ui->pathsCombo->setCurrentIndex(settingsOps.pathsList.indexOf(settingsOps.orbiterPath));
+	ui->trashCheck->setDisabled(true);
+#endif
 
-     #ifdef Q_OS_WIN
-     ui->trashCheck->setChecked(settingsOps.moveTrash);
+	ui->showCheck->setChecked(showAll);
 
-     #else
-     ui->trashCheck->setChecked(false);
+	setDbTree();
 
-     ui->trashCheck->setDisabled(true);
-     #endif
+	setIgnTree();
 
-     ui->showCheck->setChecked(showAll);
-
-     setDbTree();
-
-     setIgnTree();
-
-     setOverTree();
+	setOverTree();
 }
 
-void SettingsWindow::on_pathsCombo_currentTextChanged(const QString &arg1){
+void SettingsWindow::on_pathsCombo_currentTextChanged(const QString &arg1)
+{
+	settingsOps.orbiterPath = arg1;
 
-    settingsOps.orbiterPath = arg1;
-
-    settingsOps.backupDir = QDir::currentPath() + "/OrbiterBackup " +
-               QString::number(settingsOps.pathsList.indexOf(arg1)) + "/";
+	settingsOps.backupDir = QDir::currentPath() + "/OrbiterBackup " +
+		QString::number(settingsOps.pathsList.indexOf(arg1)) + "/";
 }
 
-void SettingsWindow::on_addPathButton_clicked(){
+void SettingsWindow::on_addPathButton_clicked()
+{
+	QString path = QFileDialog::getExistingDirectory(this, "Select Orbiter installation folder", settingsOps.orbiterPath);
 
-    QString path = QFileDialog::getExistingDirectory(this, "Select Orbiter installation folder", settingsOps.orbiterPath);
+	if (path.isEmpty()) return;
 
-    if(path.isEmpty()) return;
+	path += "/";
 
-    path += "/";
+	if (settingsOps.pathsList.contains(path))
+	{
+		QMessageBox::warning(this, "Installation already exists",
+			"The installation you are trying to add is already added");
 
-    if(settingsOps.pathsList.contains(path)){
+		return;
+	}
 
-        QMessageBox::warning(this, "Installation already exists",
-                             "The installation you are trying to add is already added");
+	// Check if orbiter.exe exists in given path
+	if (settingsOps.addPath(path))
+	{
+		ui->pathsCombo->addItem(path);
 
-        return;
+		ui->pathsCombo->setCurrentText(path);
 
-    }
+		if (!ui->snapBox->isEnabled()) ui->snapBox->setEnabled(true);
 
-    // Check if orbiter.exe exists in given path
-    if(settingsOps.addPath(path)){
+		if (!ui->removePathButton->isEnabled()) ui->removePathButton->setEnabled(true);
 
-        ui->pathsCombo->addItem(path);
+	}
+	else
+	{
+		QMessageBox::warning(this, "Orbiter folder is wrong", "Please select the correct Orbiter folder");
 
-        ui->pathsCombo->setCurrentText(path);
-
-        if(!ui->snapBox->isEnabled()) ui->snapBox->setEnabled(true);
-
-        if(!ui->removePathButton->isEnabled()) ui->removePathButton->setEnabled(true);
-
-    } else {
-
-        QMessageBox::warning(this, "Orbiter folder is wrong", "Please select the correct Orbiter folder");
-
-        on_addPathButton_clicked();
-
-    }
+		on_addPathButton_clicked();
+	}
 }
 
-void SettingsWindow::on_removePathButton_clicked(){
+void SettingsWindow::on_removePathButton_clicked()
+{
+	int index = ui->pathsCombo->currentIndex();
 
-    int index = ui->pathsCombo->currentIndex();
+	ui->pathsCombo->removeItem(index);
 
-    ui->pathsCombo->removeItem(index);
+	if (settingsOps.rmPath(index))
+	{
+		ui->snapBox->setDisabled(true);
 
-    if(settingsOps.rmPath(index)){
-
-        ui->snapBox->setDisabled(true);
-
-        ui->removePathButton->setDisabled(true);
-
-    }
-
+		ui->removePathButton->setDisabled(true);
+	}
 }
 
-void SettingsWindow::on_createButton_clicked(){
-
-    QMessageBox::information(this, "Snapshot created successfully", "Snapshot created successfully in "
-                             + settingsOps.createSnapshot());
-
+void SettingsWindow::on_createButton_clicked()
+{
+	QMessageBox::information(this, "Snapshot created successfully", "Snapshot created successfully in "
+		+ settingsOps.createSnapshot());
 }
 
-void SettingsWindow::on_importButton_clicked(){
+void SettingsWindow::on_importButton_clicked()
+{
+	QString fileName = QFileDialog::getOpenFileName(this, "Select snapshot file", "", "Text file (*.txt)");
 
-    QString fileName = QFileDialog::getOpenFileName(this, "Select snapshot file", "", "Text file (*.txt)");
+	if (fileName.isEmpty()) return;
 
-    if(fileName.isEmpty()) return;
+	OpsDialog opsDialog(this, "Importing the snapshot",
+		"Importing " + fileName + "...");
 
-    auto snapInfo = settingsOps.setSnapshot(fileName);
+	opsDialog.show();
 
-    if(snapInfo.files.isEmpty()){
+	auto snapInfo = settingsOps.setSnapshot(fileName);
 
-        QMessageBox::warning(this, "Select a correct snapshot file", "Please selected a correct snapshot file.");
+	if (snapInfo.files.isEmpty())
+	{
+		opsDialog.hide();
 
-        return;
+		opsDialog.deleteLater();
 
-    } else if(snapInfo.files.first() == "NO_CHANGE") {
+		QMessageBox::warning(this, "Select a correct snapshot file", "Please selected a correct snapshot file.");
 
-        QMessageBox::information(this, "No changes were found", "No changes were made since the snapshot was taken");
+		return;
+	}
+	else if (snapInfo.files.first() == "NO_CHANGE")
+	{
+		opsDialog.hide();
 
-    }
+		opsDialog.deleteLater();
 
-    QString res = settingsOps.importSnapshot(snapInfo.files, snapInfo.snapNames, snapInfo.snapTimes,
-                                             checkSnapshot(snapInfo.files, snapInfo.snapNames, snapInfo.snapTimes));
+		QMessageBox::information(this, "No changes were found", "No changes were made since the snapshot was taken");
+	}
 
-    if(res == "NO_BACKUP"){
+	QString res = settingsOps.importSnapshot(snapInfo.files, snapInfo.snapNames, snapInfo.snapTimes,
+		checkSnapshot(snapInfo.files, snapInfo.snapNames, snapInfo.snapTimes));
 
-        QMessageBox::warning(this, "Import failed",
-                             "Can't import the snapshot because it doesn't have a back up");
+	if (res == "NO_BACKUP")
+	{
+		opsDialog.hide();
 
-        return;
+		opsDialog.deleteLater();
 
-    } else if(res == "SUCCESS"){
+		QMessageBox::warning(this, "Import failed",
+			"Can't import the snapshot because it doesn't have a back up");
 
-        QMessageBox::information(this, "Snapshot imported successfully", "Snapshot imported successfully");
+		return;
+	}
+	else if (res == "SUCCESS")
+	{
+		opsDialog.hide();
 
-    }
+		opsDialog.deleteLater();
 
+		QMessageBox::information(this, "Snapshot imported successfully", "Snapshot imported successfully");
+	}
 }
 
-bool SettingsWindow::checkSnapshot(QStringList files, QStringList snapNames, QStringList snapTimes){
+bool SettingsWindow::checkSnapshot(QStringList files, QStringList snapNames, QStringList snapTimes)
+{
+	foreach(QString file, files)
+	{
+		QString fileName = file.split("=").first();
 
-    foreach(QString file, files){
+		QString fileTime = file.split("=").last();
 
-        QString fileName = file.split("=").first();
+		if ((snapNames.contains(fileName, Qt::CaseInsensitive) && snapTimes.contains(fileTime)) ||
+			snapNames.contains(fileName + ".oad", Qt::CaseInsensitive) ||
+			(fileName.endsWith(".oad") && snapNames.contains(fileName.split(".oad").first(), Qt::CaseInsensitive)))
+		{
+		}
+		else if (snapNames.contains(fileName, Qt::CaseInsensitive))
+		{
+			if (!QFileInfo(settingsOps.backupDir + fileName).isFile())
+			{
+				QMessageBox::StandardButtons response = QMessageBox::question(this, "Missing backup file",
+					fileName + " doesn't have a backup file."
+					" Do you want to skip it?");
 
-        QString fileTime = file.split("=").last();
+				if (response == QMessageBox::No) return true;
+			}
+		}
 
-        if((snapNames.contains(fileName, Qt::CaseInsensitive) && snapTimes.contains(fileTime)) ||
-                snapNames.contains(fileName + ".oad", Qt::CaseInsensitive) ||
-                (fileName.endsWith(".oad") && snapNames.contains(fileName.split(".oad").first(), Qt::CaseInsensitive))) {
+		QCoreApplication::processEvents();
+	}
 
-        } else if(snapNames.contains(fileName, Qt::CaseInsensitive)) {
-
-            if(!QFileInfo(settingsOps.backupDir + fileName).isFile()){
-
-                QMessageBox::StandardButtons response = QMessageBox::question(this, "Missing backup file",
-                                                                              fileName + " doesn't have a backup file."
-                                                                                         " Do you want to skip it?");
-
-                if(response == QMessageBox::No) return true;
-
-            }
-
-        }
-
-        QCoreApplication::processEvents();
-
-    }
-
-    return false;
-
+	return false;
 }
 
-void SettingsWindow::on_addIgnButton_clicked(){
+void SettingsWindow::on_addIgnButton_clicked()
+{
+	AddIgnDialog addDialog(this);
 
-    AddIgnDialog addDialog(this);
+	addDialog.addons = settingsOps.dbMap.keys();
 
-    addDialog.addons = settingsOps.dbMap.keys();
+	addDialog.exec();
 
-    addDialog.exec();
+	if (!addDialog.check) return;
 
-    if(!addDialog.check) return;
+	if (addDialog.addonFiles.isEmpty())
+	{
+		QMessageBox::warning(this, "Enter the ignored file/folder", "You must enter a file/folder to add it");
 
-    if(addDialog.addonFiles.isEmpty()){
+		return;
+	}
 
-        QMessageBox::warning(this, "Enter the ignored file/folder", "You must enter a file/folder to add it");
+	settingsOps.addIgn(addDialog.addonName, addDialog.addonFiles);
 
-        return;
-
-    }
-
-    settingsOps.addIgn(addDialog.addonName, addDialog.addonFiles);
-
-    setIgnTree();
+	setIgnTree();
 }
 
-void SettingsWindow::on_removeIgnButton_clicked(){
+void SettingsWindow::on_removeIgnButton_clicked()
+{
+	if (ui->ignoredTree->selectedItems().isEmpty())
+	{
+		QMessageBox::warning(this, "Select an add-on", "You must select a file/folder to remove it");
 
-    if(ui->ignoredTree->selectedItems().isEmpty()){
+		return;
+	}
 
-        QMessageBox::warning(this, "Select an add-on", "You must select a file/folder to remove it");
+	QTreeWidgetItem *selectedItem = ui->ignoredTree->currentItem();
 
-        return;
+	if (selectedItem->childCount() == 0)
+	{
+		QStringList ignoredList = settingsOps.ignoredMap.value(selectedItem->parent()->text(0));
 
-    }
+		ignoredList.removeOne(selectedItem->text(0));
 
-    QTreeWidgetItem *selectedItem = ui->ignoredTree->currentItem();
+		settingsOps.ignoredMap.insert(selectedItem->parent()->text(0), ignoredList);
+	}
+	else settingsOps.ignoredMap.remove(selectedItem->text(0));
 
-    if(selectedItem->childCount() == 0){
-
-        QStringList ignoredList = settingsOps.ignoredMap.value(selectedItem->parent()->text(0));
-
-        ignoredList.removeOne(selectedItem->text(0));
-
-        settingsOps.ignoredMap.insert(selectedItem->parent()->text(0), ignoredList);
-
-    } else settingsOps.ignoredMap.remove(selectedItem->text(0));
-
-    setIgnTree();
+	setIgnTree();
 }
 
-void SettingsWindow::setIgnTree(){
+void SettingsWindow::setIgnTree()
+{
+	ui->ignoredTree->clear();
 
-    ui->ignoredTree->clear();
+	int index = 0;
 
-    int index = 0;
+	foreach(QString addon, settingsOps.ignoredMap.keys())
+	{
+		QTreeWidgetItem *addonItem = new QTreeWidgetItem();
 
-    foreach(QString addon, settingsOps.ignoredMap.keys()){
+		addonItem->setText(0, addon);
 
-        QTreeWidgetItem *addonItem = new QTreeWidgetItem();
+		ui->ignoredTree->insertTopLevelItem(index, addonItem);
 
-        addonItem->setText(0, addon);
+		QStringList filesList = settingsOps.ignoredMap.value(addon);
 
-        ui->ignoredTree->insertTopLevelItem(index, addonItem);
+		QList<QTreeWidgetItem*> items;
 
-        QStringList filesList = settingsOps.ignoredMap.value(addon);
+		foreach(QString file, filesList) items.append(new QTreeWidgetItem(addonItem, file.split(",")));
 
-        QList<QTreeWidgetItem*> items;
+		ui->ignoredTree->insertTopLevelItems(index, items);
 
-        foreach(QString file, filesList){items.append(new QTreeWidgetItem(addonItem, file.split(",")));}
+		index++;
 
-        ui->ignoredTree->insertTopLevelItems(index, items);
-
-        index++;
-
-    }
-
+	}
 }
 
-void SettingsWindow::on_trashCheck_toggled(bool checked) {settingsOps.moveTrash = checked;}
+void SettingsWindow::on_trashCheck_toggled(bool checked) { settingsOps.moveTrash = checked; }
 
 void SettingsWindow::on_addEntryButton_clicked()
 {
-    AddDbDialog addDialog(this);
+	AddDbDialog addDialog(this);
 
-    addDialog.folderChecked = true;
+	addDialog.folderChecked = true;
 
-    addDialog.exec();
+	addDialog.exec();
 
-    if(!addDialog.check) return;
+	if (!addDialog.check) return;
 
-    if(addDialog.addonName.isEmpty() || (addDialog.addonFiles.isEmpty() && addDialog.addonPath.isEmpty())){
+	if (addDialog.addonName.isEmpty() || (addDialog.addonFiles.isEmpty() && addDialog.addonPath.isEmpty()))
+	{
+		QMessageBox::critical(this, "Enter the full add-on information",
+			"The add-on wasn't added. You must enter the add-on full information.");
 
-        QMessageBox::critical(this, "Enter the full add-on information",
-                              "The add-on wasn't added. You must enter the add-on full information.");
+		return;
+	}
 
-        return;
+	bool res = settingsOps.addEntry(addDialog.addonName, addDialog.addonPath, addDialog.addonFiles,
+		addDialog.folderChecked, addDialog.fileChecked, addDialog.removeDir);
 
-    }
+	if (res) QMessageBox::information(this, addDialog.addonName + " added successfully",
+		addDialog.addonName + " added successfully to the database.");
 
-    bool res = settingsOps.addEntry(addDialog.addonName, addDialog.addonPath, addDialog.addonFiles,
-                         addDialog.folderChecked, addDialog.fileChecked, addDialog.removeDir);
+	else QMessageBox::critical(this, addDialog.addonName + " addition failed",
+		addDialog.addonName + " addition failed.");
 
-    if(res) QMessageBox::information(this, addDialog.addonName + " added successfully",
-                                     addDialog.addonName + " added successfully to the database.");
-
-    else QMessageBox::critical(this,  addDialog.addonName + " addition failed",
-                               addDialog.addonName + " addition failed.");
-
-    setDbTree();
+	setDbTree();
 }
 
 void SettingsWindow::on_removeEntryButton_clicked()
 {
-    if(ui->dbTree->selectedItems().isEmpty()){
+	if (ui->dbTree->selectedItems().isEmpty())
+	{
+		QMessageBox::warning(this, "Select an add-on", "You must select an add-on to remove it");
 
-        QMessageBox::warning(this, "Select an add-on", "You must select an add-on to remove it");
+		return;
+	}
 
-        return;
+	QMessageBox::StandardButton response = QMessageBox::question(this, "Removition confirm",
+		"Are you sure you want to remove the selected item from the database?");
 
-    }
+	if (response == QMessageBox::No) return;
 
-    QMessageBox::StandardButton response = QMessageBox::question(this, "Removition confirm",
-                                            "Are you sure you want to remove the selected item from the database?");
+	QTreeWidgetItem *selectedItem = ui->dbTree->currentItem();
 
-    if(response == QMessageBox::No) return;
+	if (selectedItem->childCount() == 0)
+	{
+		QStringList filesList = settingsOps.dbMap.value(selectedItem->parent()->text(0));
 
-    QTreeWidgetItem *selectedItem = ui->dbTree->currentItem();
+		filesList.removeOne(selectedItem->text(0));
 
-    if(selectedItem->childCount() == 0){
+		settingsOps.dbMap.insert(selectedItem->parent()->text(0), filesList);
+	}
+	else settingsOps.dbMap.remove(selectedItem->text(0));
 
-        QStringList filesList = settingsOps.dbMap.value(selectedItem->parent()->text(0));
-
-        filesList.removeOne(selectedItem->text(0));
-
-        settingsOps.dbMap.insert(selectedItem->parent()->text(0), filesList);
-
-    } else settingsOps.dbMap.remove(selectedItem->text(0));
-
-    setDbTree();
-
+	setDbTree();
 }
 
-void SettingsWindow::on_editEntryButton_clicked(){
+void SettingsWindow::on_editEntryButton_clicked()
+{
+	if (ui->dbTree->selectedItems().isEmpty())
+	{
+		QMessageBox::warning(this, "Select an add-on", "You must select an add-on to edit it");
 
-    if(ui->dbTree->selectedItems().isEmpty()){
+		return;
+	}
 
-        QMessageBox::warning(this, "Select an add-on", "You must select an add-on to edit it");
+	QString oldName;
 
-        return;
+	AddDbDialog addDialog(this);
 
-    }
+	QTreeWidgetItem *selectedItem = ui->dbTree->currentItem();
 
-    QString oldName;
+	// If the selected was a file in the list
+	if (selectedItem->childCount() == 0)
+	{
+		addDialog.addonName = selectedItem->parent()->text(0);
 
-    AddDbDialog addDialog(this);
+		oldName = selectedItem->parent()->text(0);
 
-    QTreeWidgetItem *selectedItem = ui->dbTree->currentItem();
+		for (int index = 0; index < selectedItem->parent()->childCount(); index++)
+		{
+			if (index == selectedItem->parent()->childCount() - 1)
+			{
+				addDialog.addonFiles += selectedItem->parent()->child(index)->text(0);
 
-    // If the selected was a file in the list
-    if(selectedItem->childCount() == 0) {
+				break;
+			}
 
-        addDialog.addonName = selectedItem->parent()->text(0);
+			addDialog.addonFiles += selectedItem->parent()->child(index)->text(0) + ",";
 
-        oldName = selectedItem->parent()->text(0);
+		}
+	}
+	else
+	{
 
-        for(int index = 0; index < selectedItem->parent()->childCount(); index++){
+		addDialog.addonName = selectedItem->text(0);
 
-            if(index == selectedItem->parent()->childCount() - 1) {
+		oldName = selectedItem->text(0);
 
-                addDialog.addonFiles += selectedItem->parent()->child(index)->text(0);
+		for (int index = 0; index < selectedItem->childCount(); index++)
+		{
+			if (index == selectedItem->childCount() - 1)
+			{
+				addDialog.addonFiles += selectedItem->child(index)->text(0);
 
-                break;
+				break;
+			}
 
-            }
+			addDialog.addonFiles += selectedItem->child(index)->text(0) + ",";
+		}
+	}
 
-            addDialog.addonFiles += selectedItem->parent()->child(index)->text(0) + ",";
+	addDialog.filesChecked = true;
 
-        }
+	addDialog.exec();
 
-    }
+	if (!addDialog.check) return;
 
-    else {
+	settingsOps.editEntry(addDialog.addonName, oldName);
 
-        addDialog.addonName = selectedItem->text(0);
+	settingsOps.dbMap.insert(addDialog.addonName, addDialog.addonFiles.split(","));
 
-        oldName = selectedItem->text(0);
-
-        for(int index = 0; index < selectedItem->childCount(); index++){
-
-            if(index == selectedItem->childCount() - 1) {
-
-                addDialog.addonFiles += selectedItem->child(index)->text(0);
-
-                break;
-
-            }
-
-            addDialog.addonFiles += selectedItem->child(index)->text(0) + ",";
-
-        }
-
-    }
-
-    addDialog.filesChecked = true;
-
-    addDialog.exec();
-
-    if(!addDialog.check) return;
-
-    if(addDialog.addonName != oldName) {
-
-        settingsOps.dbMap.remove(oldName);
-
-        if(settingsOps.ignoredMap.contains(oldName)) {
-
-            settingsOps.ignoredMap.insert(addDialog.addonName, settingsOps.ignoredMap.value(oldName));
-
-            settingsOps.ignoredMap.remove(oldName);
-
-        }
-
-        if(overMap.keys().contains(oldName)) {
-
-            QString tempValue = overMap.value(oldName);
-
-            overMap.remove(oldName);
-
-            overMap.insert(addDialog.addonName, oldName);
-
-        } else if(overMap.values().contains(oldName)) {
-
-            QString tempName = overMap.key(oldName);
-
-            overMap.remove(tempName);
-
-            overMap.insert(tempName, addDialog.addonName);
-
-        }
-
-    }
-
-    settingsOps.dbMap.insert(addDialog.addonName, addDialog.addonFiles.split(","));
-
-    setDbTree();
-
+	setDbTree();
 }
 
-void SettingsWindow::setDbTree(){
+void SettingsWindow::setDbTree()
+{
+	ui->dbTree->clear();
 
-    ui->dbTree->clear();
+	int index = 0;
 
-    int index = 0;
+	foreach(QString addon, settingsOps.dbMap.keys())
+	{
+		QTreeWidgetItem *addonItem = new QTreeWidgetItem();
 
-    foreach(QString addon, settingsOps.dbMap.keys()){
+		addonItem->setText(0, addon);
 
-        QTreeWidgetItem *addonItem = new QTreeWidgetItem();
+		ui->dbTree->insertTopLevelItem(index, addonItem);
 
-        addonItem->setText(0, addon);
+		QStringList filesList = settingsOps.dbMap.value(addon);
 
-        ui->dbTree->insertTopLevelItem(index, addonItem);
+		QList<QTreeWidgetItem*> items;
 
-        QStringList filesList = settingsOps.dbMap.value(addon);
+		foreach(QString file, filesList) items.append(new QTreeWidgetItem(addonItem, file.split(",")));
 
-        QList<QTreeWidgetItem*> items;
+		ui->dbTree->insertTopLevelItems(index, items);
 
-        foreach(QString file, filesList){items.append(new QTreeWidgetItem(addonItem, file.split(",")));}
-
-        ui->dbTree->insertTopLevelItems(index, items);
-
-        index++;
-
-    }
-
+		index++;
+	}
 }
 
 void SettingsWindow::on_remOverButton_clicked()
 {
-    if(ui->overTree->selectedItems().isEmpty()){
+	if (ui->overTree->selectedItems().isEmpty())
+	{
+		QMessageBox::warning(this, "Select an add-on", "You must select an add-on to remove it");
 
-        QMessageBox::warning(this, "Select an add-on", "You must select an add-on to remove it");
+		return;
+	}
 
-        return;
-    }
+	QMessageBox::StandardButton response = QMessageBox::question(this, "Removition confirm",
+		"Are you sure you want to remove the selected item from the database?");
 
-    QMessageBox::StandardButton response = QMessageBox::question(this, "Removition confirm",
-                                            "Are you sure you want to remove the selected item from the override database?");
+	if (response == QMessageBox::No) return;
 
-    if(response == QMessageBox::No) return;
+	QTreeWidgetItem *selectedItem = ui->overTree->currentItem();
 
-    QTreeWidgetItem *selectedItem = ui->overTree->currentItem();
+	if (selectedItem->childCount() == 0)
+	{
+		QStringList addonsList = settingsOps.overMap.value(selectedItem->parent()->text(0));
 
-    overMap.remove(selectedItem->text(1));
+		addonsList.removeOne(selectedItem->text(0));
 
-    setOverTree();
+		settingsOps.overMap.insert(selectedItem->parent()->text(0), addonsList);
+	}
+	else settingsOps.overMap.remove(selectedItem->text(0));
+
+	setOverTree();
 }
 
 void SettingsWindow::setOverTree()
 {
-    ui->overTree->clear();
+	ui->overTree->clear();
 
-    int index = 0;
+	int index = 0;
 
-    foreach(QString addon, overMap.keys()){
+	foreach(QString addon, settingsOps.overMap.keys())
+	{
+		QTreeWidgetItem *addonItem = new QTreeWidgetItem();
 
-        QTreeWidgetItem *addonItem = new QTreeWidgetItem();
+		addonItem->setText(0, addon);
 
-        addonItem->setText(0, addon);
+		ui->overTree->insertTopLevelItem(index, addonItem);
 
-        addonItem->setText(1, overMap.value(addon));
+		QStringList addonsList = settingsOps.overMap.value(addon);
 
-        ui->overTree->insertTopLevelItem(index, addonItem);
+		QList<QTreeWidgetItem*> items;
 
-        index++;
-    }
+		foreach(QString overAddon, addonsList) items.append(new QTreeWidgetItem(addonItem, overAddon.split(",")));
+
+		ui->overTree->insertTopLevelItems(index, items);
+
+		index++;
+	}
 }
-
 void SettingsWindow::closeEvent(QCloseEvent *bar)
 {
+	showAll = ui->showCheck->isChecked();
 
-    showAll = ui->showCheck->isChecked();
+	emit closed();
 
-    emit closed();
-
-    bar->accept();
+	bar->accept();
 }
 
-SettingsWindow::~SettingsWindow(){delete ui;}
+SettingsWindow::~SettingsWindow() { delete ui; }

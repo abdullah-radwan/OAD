@@ -5,288 +5,329 @@
 #include <QTextStream>
 #include <QCoreApplication>
 
-SettingsOps::SettingsOps(){}
+SettingsOps::SettingsOps() {}
 
 SettingsOps::SettingsOps(QString orbiterPath, QString backupDir, QStringList pathsList,
-                         QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
-                         QMap<QString, QString> overMap, bool moveTrash){
+	QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
+	QMap<QString, QStringList> overMap, bool moveTrash)
+{
+	this->orbiterPath = orbiterPath;
 
-    this->orbiterPath = orbiterPath;
+	this->backupDir = backupDir;
 
-    this->backupDir = backupDir;
+	this->pathsList = pathsList;
 
-    this->pathsList = pathsList;
+	this->dbMap = dbMap;
 
-    this->dbMap = dbMap;
+	this->ignoredMap = ignoredMap;
 
-    this->ignoredMap = ignoredMap;
+	this->overMap = overMap;
 
-    this->overMap = overMap;
-
-    this->moveTrash = moveTrash;
+	this->moveTrash = moveTrash;
 }
 
-bool SettingsOps::addPath(QString path){
+bool SettingsOps::addPath(QString path)
+{
+	if (QFileInfo(path + "orbiter.exe").isFile())
+	{
+		pathsList.append(path);
 
-    if(QFileInfo(path + "orbiter.exe").isFile()){
+		QDir checkBackupDir(QDir::currentPath() + "/OrbiterBackup " + QString::number(pathsList.indexOf(path)) + "/");
 
-        pathsList.append(path);
+		if (!checkBackupDir.exists()) checkBackupDir.mkpath(".");
 
-        QDir checkBackupDir(QDir::currentPath() + "/OrbiterBackup " + QString::number(pathsList.indexOf(path)) + "/");
+		return true;
+	}
 
-        if(!checkBackupDir.exists()) checkBackupDir.mkpath(".");
-
-        return true;
-
-    }
-
-    return false;
+	return false;
 }
 
-bool SettingsOps::rmPath(int index){
+bool SettingsOps::rmPath(int index)
+{
+	QString path = QDir::currentPath() + "/OrbiterBackup ";
 
-    QString path = QDir::currentPath() + "/OrbiterBackup ";
+	AddonsOps::moveTrash(path + QString::number(index), moveTrash);
 
-    AddonsOps::moveTrash(path + QString::number(index), moveTrash);
+	for (int counter = 1; counter < pathsList.count(); counter++)
+	{
+		QCoreApplication::processEvents();
 
-    for(int counter = 1; counter < pathsList.count(); counter++){
+		if (counter < index) continue;
 
-        if(counter < index) continue;
+		QDir(path + QString::number(counter)).rename(".", path + QString::number(counter - 1));
+	}
 
-        QDir(path + QString::number(counter)).rename(".", path + QString::number(counter - 1));
+	pathsList.removeAt(index);
 
-    }
+	if (pathsList.isEmpty()) return true;
 
-    pathsList.removeAt(index);
-
-    if(pathsList.isEmpty()) return true;
-
-    return false;
+	return false;
 }
 
-QString SettingsOps::createSnapshot(){
+QString SettingsOps::createSnapshot()
+{
+	QString fileName = "snapshot-" + QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss") + ".txt";
 
-    QString fileName = "snapshot-" + QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss") + ".txt";
+	QFile file(QDir::currentPath() + "/" + fileName);
 
-    QFile file(QDir::currentPath() + "/" + fileName);
+	file.open(QIODevice::WriteOnly);
 
-    file.open(QIODevice::WriteOnly);
+	QTextStream out(&file);
 
-    QTextStream out(&file);
+	out << "SNAPSHOT_OAD" << "\n";
 
-    out << "SNAPSHOT_OAD" << "\n";
+	QDirIterator it(orbiterPath, QDirIterator::Subdirectories);
 
-    QDirIterator it(orbiterPath, QDirIterator::Subdirectories);
+	// Scan Orbiter installation
+	while (it.hasNext())
+	{
+		it.next();
 
-    // Scan Orbiter installation
-    while (it.hasNext()) {
+		QFileInfo fileInfo(it.filePath());
 
-        it.next();
+		if (fileInfo.isFile())
+		{
+			QString relPath = QDir(orbiterPath).relativeFilePath(it.filePath());
 
-        QFileInfo fileInfo(it.filePath());
+			out << relPath + "=" + QString::number(QDateTime(fileInfo.lastModified()).toSecsSinceEpoch()) << "\n";
 
-        if(fileInfo.isFile()){
+		}
 
-            QString relPath = QDir(orbiterPath).relativeFilePath(it.filePath());
+		QCoreApplication::processEvents();
+	}
 
-            out << relPath + "=" + QString::number(QDateTime(fileInfo.lastModified()).toSecsSinceEpoch()) << "\n";
+	file.flush();
 
-        }
+	file.close();
 
-        QCoreApplication::processEvents();
-
-    }
-
-    file.flush();
-
-    file.close();
-
-    return fileName;
+	return fileName;
 }
 
-SettingsOps::snapInfo SettingsOps::setSnapshot(QString fileName){
+SettingsOps::snapInfo SettingsOps::setSnapshot(QString fileName)
+{
+	QFile file(fileName);
 
-    QFile file(fileName);
+	file.open(QIODevice::ReadOnly);
 
-    file.open(QIODevice::ReadOnly);
+	QTextStream in(&file);
 
-    QTextStream in(&file);
+	if (in.readLine() != "SNAPSHOT_OAD") return {};
 
-    if(in.readLine() != "SNAPSHOT_OAD") return {};
+	QStringList files, snapNames, snapTimes, snapFiles;
 
-    QStringList files, snapNames, snapTimes, snapFiles;
+	while (!in.atEnd())
+	{
+		QString line = in.readLine();
 
-    while(!in.atEnd()) {
+		snapNames.append(line.split("=").first());
 
-        QString line = in.readLine();
+		snapTimes.append(line.split("=").last());
 
-        snapNames.append(line.split("=").first());
+		snapFiles.append(line);
 
-        snapTimes.append(line.split("=").last());
+		QCoreApplication::processEvents();
+	}
 
-        snapFiles.append(line);
+	QDirIterator it(orbiterPath, QDirIterator::Subdirectories);
 
-    }
+	while (it.hasNext())
+	{
+		it.next();
 
-    QDirIterator it(orbiterPath, QDirIterator::Subdirectories);
+		QFileInfo fileInfo(it.filePath());
 
-    while (it.hasNext()) {
+		// Avoid adding directories
+		if (fileInfo.isFile())
+		{
+			// Convert the path to relative path from the given directory
+			QString relPath = QDir(orbiterPath).relativeFilePath(it.filePath());
 
-        it.next();
+			files.append(relPath + "=" + QString::number(QDateTime(fileInfo.lastModified()).toSecsSinceEpoch()));
+		}
 
-        QFileInfo fileInfo(it.filePath());
+		QCoreApplication::processEvents();
+	}
 
-        // Avoid adding directories
-        if(fileInfo.isFile()){
+	files.sort(); snapFiles.sort();
 
-            // Convert the path to relative path from the given directory
-            QString relPath = QDir(orbiterPath).relativeFilePath(it.filePath());
+	if (files == snapFiles) return { {"NO_CHANGE"}, {"NO_CHANGE"}, {"NO_CHANGE"} };
 
-            files.append(relPath + "=" + QString::number(QDateTime(fileInfo.lastModified()).toSecsSinceEpoch()));
-
-        }
-
-        QCoreApplication::processEvents();
-
-    }
-
-    files.sort(); snapFiles.sort();
-
-    if(files == snapFiles) return {{"NO_CHANGE"}, {"NO_CHANGE"}, {"NO_CHANGE"}};
-
-    return {files, snapNames, snapTimes};
+	return { files, snapNames, snapTimes };
 }
 
-QString SettingsOps::importSnapshot(QStringList files, QStringList snapNames, QStringList snapTimes, bool checkRes){
+QString SettingsOps::importSnapshot(QStringList files, QStringList snapNames, QStringList snapTimes, bool checkRes) {
 
-    if(checkRes) return "NO_BACKUP";
+	if (checkRes) return "NO_BACKUP";
 
-    foreach(QString snapName, snapNames) {
+	foreach(QString snapName, snapNames)
+	{
+		QFileInfo snapInfo(backupDir + snapName);
 
-        QFileInfo snapInfo(backupDir + snapName);
+		if (snapInfo.isFile() && !QFileInfo(orbiterPath + snapName).isFile())
+		{
+			QDir(orbiterPath + snapName.remove(snapName.split("/").last())).mkpath(".");
 
-        if(snapInfo.isFile() && !QFileInfo(orbiterPath + snapName).isFile()){
+			QFile::copy(snapInfo.filePath(), orbiterPath + QDir(backupDir).relativeFilePath(snapInfo.filePath()));
 
-            QDir(orbiterPath + snapName.remove(snapName.split("/").last())).mkpath(".");
+			AddonsOps::moveTrash(snapInfo.filePath(), moveTrash);
 
-            QFile::copy(snapInfo.filePath(), orbiterPath + QDir(backupDir).relativeFilePath(snapInfo.filePath()));
+			while (snapInfo.dir().rmdir(".")) snapInfo.dir().cdUp();
+		}
 
-            AddonsOps::moveTrash(snapInfo.filePath(), moveTrash);
+		QCoreApplication::processEvents();
+	}
 
-            while(snapInfo.dir().rmdir(".")) snapInfo.dir().cdUp();
+	foreach(QString file, files)
+	{
+		QString fileName = file.split("=").first();
 
-        }
+		QString fileTime = file.split("=").last();
 
-        QCoreApplication::processEvents();
+		if (snapNames.contains(fileName, Qt::CaseInsensitive) && snapTimes.contains(fileTime)) {
 
-    }
+		}
+		else if (snapNames.contains(fileName, Qt::CaseInsensitive))
+		{
+			AddonsOps::moveTrash(orbiterPath + fileName, moveTrash);
 
-    foreach(QString file, files){
+			QFile::copy(backupDir + fileName, orbiterPath + fileName);
 
-        QString fileName = file.split("=").first();
+			AddonsOps::moveTrash(backupDir + fileName, moveTrash);
 
-        QString fileTime = file.split("=").last();
+			QDir parentDir(backupDir + fileName.left(fileName.lastIndexOf("/")));
 
-        if(snapNames.contains(fileName, Qt::CaseInsensitive) && snapTimes.contains(fileTime)) {
+			while (parentDir.rmdir(".")) parentDir.cdUp();
 
-        } else if(snapNames.contains(fileName, Qt::CaseInsensitive)) {
+		}
+		else if (fileName.endsWith(".oad") && snapNames.contains(fileName.split(".oad").first(), Qt::CaseInsensitive))
 
-            AddonsOps::moveTrash(orbiterPath + fileName, moveTrash);
+			QFile::rename(orbiterPath + fileName, orbiterPath + fileName + ".oad");
 
-            QFile::copy(backupDir + fileName, orbiterPath + fileName);
+		else if (snapNames.contains(fileName + ".oad", Qt::CaseInsensitive))
 
-            AddonsOps::moveTrash(backupDir + fileName, moveTrash);
+			QFile::rename(orbiterPath + fileName, orbiterPath + fileName.remove(".oad"));
 
-            QDir parentDir(backupDir + fileName.left(fileName.lastIndexOf("/")));
+		else
+		{
+			AddonsOps::moveTrash(orbiterPath + fileName, moveTrash);
 
-            while(parentDir.rmdir(".")) parentDir.cdUp();
+			QDir parentDir(orbiterPath + fileName.left(fileName.lastIndexOf("/")));
 
-        } else if(fileName.endsWith(".oad") && snapNames.contains(fileName.split(".oad").first(), Qt::CaseInsensitive)) {
+			while (parentDir.rmdir(".")) parentDir.cdUp();
+		}
 
-            QFile::rename(orbiterPath + fileName, orbiterPath + fileName + ".oad");
+		QCoreApplication::processEvents();
+	}
 
-        } else if(snapNames.contains(fileName + ".oad", Qt::CaseInsensitive)) {
-
-            QFile::rename(orbiterPath + fileName, orbiterPath + fileName.remove(".oad"));
-
-        } else {
-
-            AddonsOps::moveTrash(orbiterPath + fileName, moveTrash);
-
-            QDir parentDir(orbiterPath + fileName.left(fileName.lastIndexOf("/")));
-
-            while(parentDir.rmdir(".")) parentDir.cdUp();
-
-        }
-
-        QCoreApplication::processEvents();
-
-    }
-
-    return "SUCCESS";
+	return "SUCCESS";
 }
 
-void SettingsOps::addIgn(QString addonName, QString addonFiles){
+void SettingsOps::addIgn(QString addonName, QString addonFiles)
+{
+	QStringList ignoredList;
 
-    QStringList ignoredList;
+	if (!ignoredMap.value(addonName).isEmpty())
+	{
+		ignoredList = ignoredMap.value(addonName);
 
-    if(!ignoredMap.value(addonName).isEmpty()){
+		ignoredList.append(addonFiles.toLower().split(","));
 
-        ignoredList = ignoredMap.value(addonName);
+	}
+	else ignoredList = addonFiles.toLower().split(",");
 
-        ignoredList.append(addonFiles.toLower().split(","));
-
-    } else ignoredList = addonFiles.toLower().split(",");
-
-    ignoredMap.insert(addonName, ignoredList);
+	ignoredMap.insert(addonName, ignoredList);
 }
 
 bool SettingsOps::addEntry(QString addonName, QString addonPath, QString addonFiles,
-                           bool folderChecked, bool fileChecked, bool removeDir){
+	bool folderChecked, bool fileChecked, bool removeDir)
+{
+	if (folderChecked)
+	{
+		dbMap.insert(addonName, AddonsOps::scanDirectory(addonPath));
 
-    if(folderChecked) {
-        AddonsOps::scanDirectory(addonPath);
+		if (removeDir) AddonsOps::moveTrash(addonPath, moveTrash);
+	}
 
-        dbMap.insert(addonName, AddonsOps::scanDirectory(addonPath));
+	else if (fileChecked)
+	{
+		QString oldPath = addonPath;
 
-        if(removeDir) AddonsOps::moveTrash(addonPath, moveTrash);
-    }
+		QString res = AddonsOps::checkCompFile(addonPath);
 
-    else if(fileChecked)
-    {
-        QString oldPath = addonPath;
+		if (res.isEmpty())
+		{
+			QString tempPath = QDir::currentPath() + "/" + addonName;
 
-        QString res = AddonsOps::checkCompFile(addonPath);
+			QDir(tempPath).mkdir(".");
 
-        if(res.isEmpty()){
+			if (!AddonsOps::extract(addonPath, tempPath)) return false;
 
-            QString tempPath = QDir::currentPath() + "/" + addonName;
+			dbMap.insert(addonName, AddonsOps::scanDirectory(tempPath));
 
-            QDir(tempPath).mkdir(".");
+			QDir(tempPath).removeRecursively();
+		}
+		else
+		{
 
-            if(!AddonsOps::extract(addonPath, tempPath)) return false;
+			if (!AddonsOps::extract(addonPath, QDir::currentPath())) return false;
 
-            AddonsOps::scanDirectory(tempPath);
+			addonPath = QDir::currentPath() + "/" + res;
 
-            dbMap.insert(addonName, AddonsOps::scanDirectory(tempPath));
+			dbMap.insert(addonName, AddonsOps::scanDirectory(addonPath));
+		}
 
-            QDir(tempPath).removeRecursively();
+		if (removeDir) AddonsOps::moveTrash(oldPath, moveTrash);
 
-        } else {
+	}
+	else dbMap.insert(addonName, addonFiles.split(","));
 
-            if(!AddonsOps::extract(addonPath, QDir::currentPath())) return false;
+	return true;
+}
 
-            addonPath = QDir::currentPath() + "/" + res;
+void SettingsOps::editEntry(QString addonName, QString oldName)
+{
+	if (addonName != oldName)
+	{
+		dbMap.remove(oldName);
 
-            AddonsOps::scanDirectory(addonPath);
+		if (ignoredMap.contains(oldName))
+		{
+			ignoredMap.insert(addonName, ignoredMap.value(oldName));
 
-            dbMap.insert(addonName, AddonsOps::scanDirectory(addonPath));
+			ignoredMap.remove(oldName);
+		}
 
-        }
+		QStringList overNames;
 
-        if(removeDir) AddonsOps::moveTrash(oldPath, moveTrash);
+		if (overMap.contains(oldName))
+		{
+			overNames = overMap.value(oldName);
 
-    } else dbMap.insert(addonName, addonFiles.split(","));
+			overMap.remove(oldName);
 
-    return true;
+			overMap.insert(addonName, overNames);
+		}
+		else
+		{
+			foreach(QString addon, overMap.keys())
+			{
+				if (overMap.value(addon).contains(oldName))
+				{
+					overNames = overMap.value(addon);
+
+					overNames.removeOne(oldName);
+
+					overNames.append(addonName);
+
+					overMap.remove(addon);
+
+					overMap.insert(addon, overNames);
+
+					break;
+				}
+
+				QCoreApplication::processEvents();
+			}
+		}
+	}
 }

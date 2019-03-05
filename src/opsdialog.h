@@ -4,22 +4,22 @@
 #include <QDialog>
 #include <QString>
 
-namespace Ui {
-class OpsDialog;
-}
+namespace Ui { class OpsDialog; }
 
 class OpsDialog : public QDialog
 {
-    Q_OBJECT
-
+	Q_OBJECT
 public:
-    explicit OpsDialog(QWidget *parent = nullptr);
-    OpsDialog(QWidget *parent, QString title, QString label);
-    ~OpsDialog();
+	explicit OpsDialog(QWidget *parent = nullptr);
+
+	OpsDialog(QWidget *parent, QString title, QString label);
+
+	~OpsDialog();
 
 private:
-    Ui::OpsDialog *ui;
-    void reject();
+	Ui::OpsDialog *ui;
+
+	void reject();
 };
 
 #endif // OPSDIALOG_H

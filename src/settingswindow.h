@@ -5,71 +5,69 @@
 #include <QMap>
 #include <settingsops.h>
 
-namespace Ui {class SettingsWindow;}
+namespace Ui { class SettingsWindow; }
 
-class SettingsWindow : public QMainWindow{Q_OBJECT
-
+class SettingsWindow : public QMainWindow 
+{
+	Q_OBJECT
 public:
-    QMap<QString, QString> overMap;
+	SettingsOps settingsOps;
 
-    SettingsOps settingsOps;
+	bool showAll;
 
-    bool showAll;
+	explicit SettingsWindow(QWidget *parent = nullptr);
 
-    explicit SettingsWindow(QWidget *parent = nullptr);
+	SettingsWindow(QWidget *parent, QString orbiterPath, QString backupDir, QStringList pathsList,
+		QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
+		QMap<QString, QStringList> overMap, bool moveTrash, bool showAll);
 
-    SettingsWindow(QWidget *parent, QString orbiterPath, QString backupDir, QStringList pathsList,
-                   QMap<QString, QStringList> dbMap, QMap<QString, QStringList> ignoredMap,
-                   QMap<QString, QString> overMap, bool moveTrash, bool showAll);
-
-    ~SettingsWindow();
+	~SettingsWindow();
 
 protected:
-    void showEvent(QShowEvent *ev);
+	void showEvent(QShowEvent *ev);
 
 private slots:
-    void on_addPathButton_clicked();
+	void on_addPathButton_clicked();
 
-    void on_removePathButton_clicked();
+	void on_removePathButton_clicked();
 
-    void on_createButton_clicked();
+	void on_createButton_clicked();
 
-    void on_importButton_clicked();
+	void on_importButton_clicked();
 
-    void on_addEntryButton_clicked();
+	void on_addEntryButton_clicked();
 
-    void on_removeEntryButton_clicked();
+	void on_removeEntryButton_clicked();
 
-    void on_editEntryButton_clicked();
+	void on_editEntryButton_clicked();
 
-    void on_addIgnButton_clicked();
+	void on_addIgnButton_clicked();
 
-    void on_removeIgnButton_clicked();
+	void on_removeIgnButton_clicked();
 
-    void on_trashCheck_toggled(bool checked);
+	void on_trashCheck_toggled(bool checked);
 
-    void on_pathsCombo_currentTextChanged(const QString &arg1);
+	void on_pathsCombo_currentTextChanged(const QString &arg1);
 
-    void on_remOverButton_clicked();
+	void on_remOverButton_clicked();
 
 signals:
-    void closed();
+	void closed();
 
 private:
-    Ui::SettingsWindow *ui;
+	Ui::SettingsWindow *ui;
 
-    bool checkSnapshot(QStringList fileNames, QStringList fileTimes, QStringList snapFiles);
+	bool checkSnapshot(QStringList fileNames, QStringList fileTimes, QStringList snapFiles);
 
-    void setDbTree();
+	void setDbTree();
 
-    void setIgnTree();
+	void setIgnTree();
 
-    void setOverTree();
+	void setOverTree();
 
-    QString scanDir(QString path);
+	QString scanDir(QString path);
 
-    void closeEvent(QCloseEvent *bar);
-
+	void closeEvent(QCloseEvent *bar);
 };
 
 #endif // SETTINGSWINDOW_H

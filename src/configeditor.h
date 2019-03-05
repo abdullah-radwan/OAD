@@ -3,24 +3,22 @@
 
 #include <QMap>
 
-class ConfigEditor{
-
+class ConfigEditor
+{
 public:
-    struct Config{
-        QString orbiterPath;
-        QStringList pathsList;
-        QMap<QString, QStringList> dbMap, ignoredMap;
-        QMap<QString, QString> overMap;
-        bool moveTrash;
-    };
+	struct Config
+	{
+		QString orbiterPath;
+		QStringList pathsList;
+		QMap<QString, QStringList> dbMap, ignoredMap, overMap;
+		bool moveTrash;
+	};
 
-    ConfigEditor();
+	ConfigEditor();
 
-    static Config readConfig();
+	static Config readConfig();
 
-    static void writeConfig(QString orbiterPath, QStringList pathsList, QMap<QString, QStringList> dbMap,
-                            QMap<QString, QStringList> ignoredMap , QMap<QString, QString> overMap, bool moveTrash);
-
+	static void writeConfig(Config config);
 };
 
 #endif // CONFIGEDITOR_H

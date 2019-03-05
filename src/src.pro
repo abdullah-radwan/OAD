@@ -13,9 +13,10 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++11
 
-LIBS += -larchive
+LIBS += -lz
+LIBS += -lquazip
 
-include(../libs/QArchive/QArchive.pri)
+INCLUDEPATH += tmp/moc/release_shared
 
 SOURCES += \
     main.cpp \
@@ -27,7 +28,8 @@ SOURCES += \
     installdialog.cpp \
     addigndialog.cpp \
     settingsops.cpp \
-    opsdialog.cpp
+    opsdialog.cpp \
+    zipthread.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -38,7 +40,8 @@ HEADERS += \
     installdialog.h \
     addigndialog.h \
     settingsops.h \
-    opsdialog.h
+    opsdialog.h \
+    zipthread.h
 
 FORMS += \
     mainwindow.ui \
