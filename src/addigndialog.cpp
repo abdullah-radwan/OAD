@@ -1,32 +1,30 @@
 #include "addigndialog.h"
 #include "ui_addigndialog.h"
 
-AddIgnDialog::AddIgnDialog(QWidget *parent) : QDialog(parent), ui(new Ui::AddIgnDialog){ui->setupUi(this);}
+AddIgnDialog::AddIgnDialog(QWidget *parent) : QDialog(parent), ui(new Ui::AddIgnDialog) { ui->setupUi(this); }
 
-void AddIgnDialog::showEvent(QShowEvent *ev){
+void AddIgnDialog::showEvent(QShowEvent *ev)
+{
+	QDialog::showEvent(ev);
 
-    QDialog::showEvent(ev);
+	ui->addonCombo->addItem("All");
 
-    ui->addonCombo->addItem("All");
+	ui->addonCombo->addItems(addons);
 
-    ui->addonCombo->addItems(addons);
-
-    ui->filesEdit->setText(addonFiles);
-
+	ui->filesEdit->setText(addonFiles);
 }
 
-void AddIgnDialog::on_addButton_clicked(){
+void AddIgnDialog::on_addButton_clicked()
+{
+	addonFiles = ui->filesEdit->text();
 
-    addonFiles = ui->filesEdit->text();
+	addonName = ui->addonCombo->currentText();
 
-    addonName = ui->addonCombo->currentText();
+	check = true;
 
-    check = true;
-
-    close();
-
+	close();
 }
 
-void AddIgnDialog::on_cancelButton_clicked(){close();}
+void AddIgnDialog::on_cancelButton_clicked() { close(); }
 
-AddIgnDialog::~AddIgnDialog(){delete ui;}
+AddIgnDialog::~AddIgnDialog() { delete ui; }

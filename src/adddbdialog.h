@@ -3,40 +3,40 @@
 
 #include <QDialog>
 
-namespace Ui {class AddDbDialog;}
+namespace Ui { class AddDbDialog; }
 
-class AddDbDialog : public QDialog{Q_OBJECT
-
+class AddDbDialog : public QDialog
+{
+	Q_OBJECT
 public:
-    QString addonName, addonFiles, addonPath;
+	QString addonName, addonFiles, addonPath;
 
-    bool check, folderChecked, filesChecked, fileChecked, removeDir;
+	bool check, folderChecked, filesChecked, fileChecked, removeDir;
 
-    explicit AddDbDialog(QWidget *parent = nullptr);
+	explicit AddDbDialog(QWidget *parent = nullptr);
 
-    ~AddDbDialog();
+	~AddDbDialog();
 
 protected:
-    void showEvent(QShowEvent *ev);
+	void showEvent(QShowEvent *ev);
 
 private slots:
-    void on_addButton_clicked();
+	void on_addButton_clicked();
 
-    void on_cancelButton_clicked();
+	void on_cancelButton_clicked();
 
-    void on_folderButton_clicked();
+	void on_folderButton_clicked();
 
-    void on_fileButton_clicked();
+	void on_fileButton_clicked();
 
-    void on_filesRadio_clicked();
+	void on_filesRadio_clicked();
 
-    void on_fileRadio_clicked();
+	void on_fileRadio_clicked();
 
-    void on_folderRadio_clicked();
+	void on_folderRadio_clicked();
 
 private:
-    Ui::AddDbDialog *ui;
-
+	Ui::AddDbDialog *ui;
 };
 
 #endif // ADDDBDIALOG_H

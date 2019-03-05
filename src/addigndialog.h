@@ -3,31 +3,32 @@
 
 #include <QDialog>
 
-namespace Ui {class AddIgnDialog;}
+namespace Ui { class AddIgnDialog; }
 
-class AddIgnDialog : public QDialog {Q_OBJECT
-
+class AddIgnDialog : public QDialog
+{
+	Q_OBJECT
 public:
-    QString addonName, addonFiles;
+	QString addonName, addonFiles;
 
-    QStringList addons;
+	QStringList addons;
 
-    bool check;
+	bool check;
 
-    explicit AddIgnDialog(QWidget *parent = nullptr);
+	explicit AddIgnDialog(QWidget *parent = nullptr);
 
-    ~AddIgnDialog();
+	~AddIgnDialog();
 
 protected:
-    void showEvent(QShowEvent *ev);
+	void showEvent(QShowEvent *ev);
 
 private slots:
-    void on_addButton_clicked();
+	void on_addButton_clicked();
 
-    void on_cancelButton_clicked();
+	void on_cancelButton_clicked();
 
 private:
-    Ui::AddIgnDialog *ui;
+	Ui::AddIgnDialog *ui;
 };
 
 #endif // ADDIGNDIALOG_H

@@ -38,6 +38,7 @@ LIBS += -LD:/Qt/zlib-1.2.11 -lz
 INCLUDEPATH += D:/Qt/quazip-0.7.3/quazip
 LIBS += -LD:/Qt/quazip-0.7.3/quazip/release -lquazip
 ```
+
 ## About
 The program is based on C++, Qt 5.11 and Quazip. Any suggestions, bugs and contributes are welcomed.
 

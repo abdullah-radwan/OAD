@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="res.qrc">
-    <normaloff>:/res/icon/satellite.ico</normaloff>:/res/icon/satellite.ico</iconset>
+    <normaloff>:/res/satellite.ico</normaloff>:/res/satellite.ico</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">

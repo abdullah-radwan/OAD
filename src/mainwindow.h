@@ -5,46 +5,43 @@
 #include "settingswindow.h"
 #include <QMainWindow>
 
+namespace Ui { class MainWindow; }
 
-namespace Ui {class MainWindow;}
-
-class MainWindow : public QMainWindow{Q_OBJECT
-
+class MainWindow : public QMainWindow
+{
+	Q_OBJECT
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+	explicit MainWindow(QWidget *parent = nullptr);
 
-    ~MainWindow();
+	~MainWindow();
 
 private slots:
-    void on_actionSettings_triggered();
+	void on_actionSettings_triggered();
 
-    void on_actionRescan_triggered();
+	void on_actionRescan_triggered();
 
-    void on_actionAbout_triggered();
+	void on_actionAbout_triggered();
 
-    void on_installButton_clicked();
+	void on_installButton_clicked();
 
-    void on_uninstallButton_clicked();
+	void on_uninstallButton_clicked();
 
-    void on_disableButton_clicked();
+	void on_disableButton_clicked();
 
-    void on_enableButton_clicked();
+	void on_enableButton_clicked();
 
 private:
-    Ui::MainWindow *ui;
+	Ui::MainWindow *ui;
 
-    QString orbiterPath;
+	QString orbiterPath;
 
-    QStringList pathsList;
+	QStringList pathsList;
 
-    AddonsOps addonsOps;
+	AddonsOps addonsOps;
 
-    void updateAddonsList();
+	void updateAddonsList();
 
-    void setWidgets();
-
-    void setWidgets(bool stat);
-
+	void setWidgets();
 };
 
 #endif // MAINWINDOW_H

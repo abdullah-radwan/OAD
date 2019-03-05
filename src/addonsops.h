@@ -3,47 +3,49 @@
 
 #include <QMap>
 
-class AddonsOps{
-
+class AddonsOps
+{
 public:
-    QString orbiterPath, backupDir;
+	QString orbiterPath, backupDir;
 
-    QMap<QString, QStringList> dbMap, ignoredMap;
+	QMap<QString, QStringList> dbMap, ignoredMap, installedMap, overMap;
 
-    QMap<QString, QString> overMap;
+	bool moveToTrash, showAll;
 
-    bool moveToTrash;
+	struct addonsLists { QStringList enabledAddons, disabledAddons; };
 
-    struct addonsLists{QStringList enabledAddons, disabledAddons;};
+	AddonsOps();
 
-    AddonsOps();
+	AddonsOps(QString orbiterPath, QString backupDir, QMap<QString, QStringList> dbMap,
+		QMap<QString, QStringList> ignoredMap, QMap<QString, QStringList> overMap,
+		bool moveTrash, bool showAll);
 
-    AddonsOps(QString orbiterPath, QString backupDir, QMap<QString, QStringList> dbMap,
-              QMap<QString, QStringList> ignoredMap, QMap<QString, QString> overMap, bool moveTrash);
+	addonsLists scanAddons();
 
-    addonsLists scanAddons();
+	void enableAddon(QString name);
 
-    void enableAddon(QString name);
+	void disableAddon(QString name);
 
-    void disableAddon(QString name);
+	int installAddon(QString name, QString path, bool compChecked, bool installSources, bool removeAddonDir);
 
-    bool installAddon(QString name, QString path, bool compChecked, bool installSources, bool removeAddonDir);
+	QStringList uninstallAddon(QString name);
 
-    QString uninstallAddon(QString name);
+	static QStringList scanDirectory(QString dirPath);
 
-    static QStringList scanDirectory(QString dirPath);
+	static QString checkCompFile(QString path);
 
-    static QString checkCompFile(QString path);
+	static void moveTrash(QString file, bool moveTrash);
 
-    static void moveTrash(QString file, bool moveTrash);
+	static bool extract(QString archivePath, QString extractPath);
 
 private:
-    void setOverrider(QString addonName, QString addonFile);
+	void setOverrider(QString addonName, QString addonFile);
 
-    void setDbMap(QString addonName, QStringList addonFiles);
+	void setDbMap(QString addonName, QStringList addonFiles);
 
-    bool checkIgn(QString addonName, QString file);
+	bool checkIgn(QString addonName, QString file);
 
+	bool checkInstalled(QString addonName, QStringList addonFiles);
 };
 
 #endif // ADDONSOPS_H

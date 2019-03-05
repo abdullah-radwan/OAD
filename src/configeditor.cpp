@@ -1,114 +1,111 @@
 #include "configeditor.h"
 #include <QSettings>
 
-ConfigEditor::ConfigEditor(){}
+ConfigEditor::ConfigEditor() {}
 
-ConfigEditor::Config ConfigEditor::readConfig(){
+ConfigEditor::Config ConfigEditor::readConfig()
+{
+	// Read the config file from config.cfg file in main program directory
+	QSettings settings("config.cfg", QSettings::IniFormat);
 
-    // Read the config file from config.cfg file in main program directory
-    QSettings settings("config.cfg", QSettings::IniFormat);
+	settings.beginGroup("General");
 
-    settings.beginGroup("General");
+	QString orbiterPath = settings.value("OrbiterPath").toString();
 
-    QString orbiterPath = settings.value("OrbiterPath").toString();
+	QStringList pathsList = settings.value("PathsList").toStringList();
 
-    QStringList pathsList = settings.value("PathsList").toStringList();
+	bool moveTrash = settings.value("MoveTrash").toBool();
 
-    bool moveTrash = settings.value("MoveTrash").toBool();
+	settings.endGroup();
 
-    settings.endGroup();
+	QMap<QString, QStringList> ignoredMap, dbMap, overMap;
 
-    QMap<QString, QStringList> ignoredMap, dbMap;
+	settings.beginGroup("IgnoredMap");
 
-    QMap<QString, QString> overMap;
+	QStringList ignKeys = settings.childKeys();
 
-    settings.beginGroup("IgnoredMap");
+	foreach(QString key, ignKeys) ignoredMap.insert(key, settings.value(key).toStringList());
 
-    QStringList ignKeys = settings.childKeys();
+	settings.endGroup();
 
-    foreach (QString key, ignKeys) {ignoredMap.insert(key, settings.value(key).toStringList());}
+	settings.beginGroup("DatabaseMap");
 
-    settings.endGroup();
+	QStringList dbKeys = settings.childKeys();
 
-    settings.beginGroup("DatabaseMap");
+	foreach(QString key, dbKeys) dbMap.insert(key, settings.value(key).toStringList());
 
-    QStringList dbKeys = settings.childKeys();
+	settings.endGroup();
 
-    foreach (QString key, dbKeys) {dbMap.insert(key, settings.value(key).toStringList());}
+	settings.beginGroup("OverriderMap");
 
-    settings.endGroup();
+	QStringList overKeys = settings.childKeys();
 
-    settings.beginGroup("OverriderMap");
+	if (!overKeys.isEmpty())
+	{
+		if (settings.value(overKeys.first()).toStringList().isEmpty())
+			foreach(QString key, overKeys) overMap.insert(key, QStringList(settings.value(key).toString()));
+		else foreach(QString key, overKeys) overMap.insert(key, settings.value(key).toStringList());
+	}
 
-    QStringList overKeys = settings.childKeys();
+	settings.endGroup();
 
-    foreach (QString key, overKeys) {overMap.insert(key, settings.value(key).toString());}
-
-    settings.endGroup();
-
-    // Return data as config struct
-    return {orbiterPath, pathsList, dbMap, ignoredMap, overMap, moveTrash};
-
+	// Return data as config struct
+	return { orbiterPath, pathsList, dbMap, ignoredMap, overMap, moveTrash };
 }
 
-void ConfigEditor::writeConfig(QString orbiterPath, QStringList pathsList, QMap<QString, QStringList> dbMap,
-                               QMap<QString, QStringList> ignoredMap,QMap<QString, QString> overMap, bool moveTrash){
+void ConfigEditor::writeConfig(Config config)
+{
+	QSettings settings("config.cfg", QSettings::IniFormat);
 
-    QSettings settings("config.cfg", QSettings::IniFormat);
+	settings.clear();
 
-    settings.clear();
+	settings.beginGroup("General");
 
-    settings.beginGroup("General");
+	settings.setValue("OrbiterPath", config.orbiterPath);
 
-    settings.setValue("OrbiterPath", orbiterPath);
+	settings.setValue("PathsList", QVariant(config.pathsList));
 
-    settings.setValue("PathsList", QVariant(pathsList));
+	settings.setValue("MoveTrash", config.moveTrash);
 
-    settings.setValue("MoveTrash", moveTrash);
+	settings.endGroup();
 
-    settings.endGroup();
+	settings.beginGroup("IgnoredMap");
 
-    settings.beginGroup("IgnoredMap");
+	QMap<QString, QStringList>::const_iterator ignIterator = config.ignoredMap.constBegin();
 
-    QMap<QString, QStringList>::const_iterator ignIterator = ignoredMap.constBegin();
+	while (ignIterator != config.ignoredMap.constEnd())
+	{
+		settings.setValue(ignIterator.key(), QVariant(ignIterator.value()));
 
-    while (ignIterator != ignoredMap.constEnd()) {
+		++ignIterator;
+	}
 
-        settings.setValue(ignIterator.key(), QVariant(ignIterator.value()));
+	settings.endGroup();
 
-        ++ignIterator;
+	settings.beginGroup("DatabaseMap");
 
-    }
+	QMap<QString, QStringList>::const_iterator dbIterator = config.dbMap.constBegin();
 
-    settings.endGroup();
+	while (dbIterator != config.dbMap.constEnd())
+	{
+		settings.setValue(dbIterator.key(), QVariant(dbIterator.value()));
 
-    settings.beginGroup("DatabaseMap");
+		++dbIterator;
+	}
 
-    QMap<QString, QStringList>::const_iterator dbIterator = dbMap.constBegin();
+	settings.endGroup();
 
-    while (dbIterator != dbMap.constEnd()) {
+	settings.beginGroup("OverriderMap");
 
-        settings.setValue(dbIterator.key(), QVariant(dbIterator.value()));
+	QMap<QString, QStringList>::const_iterator overIterator = config.overMap.constBegin();
 
-        ++dbIterator;
+	while (overIterator != config.overMap.constEnd())
+	{
+		settings.setValue(overIterator.key(), QVariant(overIterator.value()));
 
-    }
+		++overIterator;
+	}
 
-    settings.endGroup();
-
-    settings.beginGroup("OverriderMap");
-
-    QMap<QString, QString>::const_iterator overIterator = overMap.constBegin();
-
-    while (overIterator != overMap.constEnd()) {
-
-        settings.setValue(overIterator.key(), QVariant(overIterator.value()));
-
-        ++overIterator;
-
-    }
-
-    settings.endGroup();
-
+	settings.endGroup();
 }
 

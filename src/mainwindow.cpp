@@ -2,236 +2,282 @@
 #include "ui_mainwindow.h"
 #include "configeditor.h"
 #include "installdialog.h"
+#include "opsdialog.h"
 #include "addonsops.h"
 #include <QDir>
 #include <QMessageBox>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow){
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
+{
+	ui->setupUi(this);
 
-    ui->setupUi(this);
+	// Read config, data returned as struct
+	auto config = ConfigEditor::readConfig();
 
-    // Read config, data returned as struct
-    auto config = ConfigEditor::readConfig();
+	orbiterPath = config.orbiterPath;
 
-    orbiterPath = config.orbiterPath;
+	pathsList = config.pathsList;
 
-    pathsList = config.pathsList;
+	QString backupDir;
 
-    QString backupDir;
+	if (!orbiterPath.isEmpty()) backupDir = QDir::currentPath() +
+		"/OrbiterBackup " + QString::number(pathsList.indexOf(orbiterPath)) + "/";
 
-    if(!orbiterPath.isEmpty()) backupDir = QDir::currentPath() +
-            "/OrbiterBackup " + QString::number(pathsList.indexOf(orbiterPath)) + "/";
+	addonsOps = AddonsOps(orbiterPath, backupDir, config.dbMap,
+		config.ignoredMap, config.overMap, config.moveTrash, false);
 
-    addonsOps = AddonsOps(orbiterPath, backupDir, config.dbMap,
-                          config.ignoredMap, config.overMap, config.moveTrash);
+	updateAddonsList();
 
-    updateAddonsList();
-
-    setWidgets();
+	setWidgets();
 }
 
 // Enable/Disable widgets based on Orbiter path
-void MainWindow::setWidgets(){
+void MainWindow::setWidgets()
+{
+	if (orbiterPath.isEmpty()) { ui->centralWidget->setEnabled(false); return; }
 
-    if(orbiterPath.isEmpty()){setWidgets(false); return;}
+	if (QFileInfo(orbiterPath + "orbiter.exe").isFile()) ui->centralWidget->setEnabled(true);
 
-    if(QFileInfo(orbiterPath + "orbiter.exe").isFile()){
+	else {
+		ui->centralWidget->setEnabled(false);
 
-        setWidgets(true);
-
-    } else {
-
-        setWidgets(false);
-
-        QMessageBox::warning(this, "Wrong Orbiter installation", "Please add a correct Orbiter installation");
-
-    }
-
+		QMessageBox::warning(this, "Wrong Orbiter installation", "Please add a correct Orbiter installation");
+	}
 }
 
-void MainWindow::setWidgets(bool stat){
+void MainWindow::updateAddonsList()
+{
+	ui->enabledAddonsList->clear();
 
-    ui->enabledGroup->setEnabled(stat);
+	ui->disabledAddonsList->clear();
 
-    ui->disabledGroup->setEnabled(stat);
+    OpsDialog opsDialog(this, "Scanning for add-ons", "Scanning for add-ons...");
 
-    ui->installButton->setEnabled(stat);
-
-    ui->uninstallButton->setEnabled(stat);
-
-}
-
-void MainWindow::updateAddonsList(){
-
-    ui->enabledAddonsList->clear();
-
-    ui->disabledAddonsList->clear();
+    opsDialog.show();
 
     auto lists = addonsOps.scanAddons();
 
-    ui->enabledAddonsList->addItems(lists.enabledAddons);
+    opsDialog.hide();
 
-    ui->disabledAddonsList->addItems(lists.disabledAddons);
+    opsDialog.deleteLater();
 
+	ui->enabledAddonsList->addItems(lists.enabledAddons);
+
+	ui->disabledAddonsList->addItems(lists.disabledAddons);
 }
 
-void MainWindow::on_enableButton_clicked(){
+void MainWindow::on_enableButton_clicked()
+{
+	// If nothing is selected
+	if (ui->disabledAddonsList->selectedItems().isEmpty()) {
+		QMessageBox::warning(this, "Select an add-on", "You must select an add-on to enable it");
 
-    // If nothing is selected
-    if(ui->disabledAddonsList->selectedItems().isEmpty()){
+		return;
+	}
 
-        QMessageBox::warning(this, "Select an add-on", "You must select an add-on to enable it");
+	QString addonName = ui->disabledAddonsList->currentItem()->text();
 
-        return;
+	OpsDialog opsDialog(this, "Enabling " + addonName,
+		"Enabling " + addonName + "...");
 
-    }
+	opsDialog.show();
 
-    addonsOps.enableAddon(ui->disabledAddonsList->currentItem()->text());
+	addonsOps.enableAddon(addonName);
 
-    updateAddonsList();
+	opsDialog.hide();
+
+	opsDialog.deleteLater();
+
+	updateAddonsList();
 }
 
-void MainWindow::on_disableButton_clicked(){
+void MainWindow::on_disableButton_clicked()
+{
+	if (ui->enabledAddonsList->selectedItems().isEmpty())
+	{
+		QMessageBox::warning(this, "Select an add-on", "You must select an add-on to disable it");
 
-    if(ui->enabledAddonsList->selectedItems().isEmpty()){
+		return;
+	}
 
-        QMessageBox::warning(this, "Select an add-on", "You must select an add-on to disable it");
+	QString addonName = ui->enabledAddonsList->currentItem()->text();
 
-        return;
+	OpsDialog opsDialog(this, "Disabling " + addonName,
+		"Disabling " + addonName + "...");
 
-    }
+	opsDialog.show();
 
-    addonsOps.disableAddon(ui->enabledAddonsList->currentItem()->text());
+	addonsOps.disableAddon(addonName);
 
-    updateAddonsList();
+	opsDialog.hide();
+
+	opsDialog.deleteLater();
+
+	updateAddonsList();
 }
 
 // Install button
-void MainWindow::on_installButton_clicked(){
+void MainWindow::on_installButton_clicked()
+{
+	InstallDialog installDialog(this);
 
-    InstallDialog installDialog(this);
+	installDialog.exec();
 
-    installDialog.exec();
+	// If user didn't press Install button in the dialog
+	if (!installDialog.check) return;
 
-    // If user didn't press Install button in the dialog
-    if(!installDialog.check) return;
+	// If addon name or path is empty
+	if (installDialog.addonName.isEmpty() || installDialog.addonPath.isEmpty())
+	{
+		QMessageBox::critical(this, "Enter the add-on's full information",
+			"Add-on wasn't installed. You must enter the add-on name or/and path.");
 
-    // If addon name or path is empty
-    if(installDialog.addonName.isEmpty() || installDialog.addonPath.isEmpty()){
+		return;
+	}
 
-        QMessageBox::critical(this, "Enter the add-on's full information",
-                              "Add-on wasn't installed. You must enter the add-on name or/and path.");
+	OpsDialog opsDialog(this, "Installing " + installDialog.addonName,
+		"Installing " + installDialog.addonName + "...");
 
-        return;
+	opsDialog.show();
 
-    }
+	int res = addonsOps.installAddon(installDialog.addonName, installDialog.addonPath, installDialog.compChecked,
+		installDialog.installSources, installDialog.removeAddonDir);
 
-    bool res = addonsOps.installAddon(installDialog.addonName, installDialog.addonPath, installDialog.compChecked,
-                       installDialog.installSources, installDialog.removeAddonDir);
+	opsDialog.deleteLater();
 
-    if(!res) {
+	switch (res)
+	{
+		// Failed
+	case -1:
+		QMessageBox::critical(this, "Add-on installation failed",
+			installDialog.addonName + " installation failed");
+		return;
+		// Already exists
+	case 0:
+		QMessageBox::warning(this, "Add-on already installed",
+			installDialog.addonName + " is already installed");
+		return;
+		// Sucess
+	case 1:
+		break;
+	}
 
-        QMessageBox::warning(this, "Add-on installation failed",
-                                 installDialog.addonName + " installation failed");
+	updateAddonsList();
 
-        return;
-
-    }
-
-    updateAddonsList();
-
-    QMessageBox::information(this, "Add-on installed successfully",
-                             installDialog.addonName + " installed successfully");
+	QMessageBox::information(this, "Add-on installed successfully",
+		installDialog.addonName + " installed successfully");
 }
 
-void MainWindow::on_uninstallButton_clicked(){
+void MainWindow::on_uninstallButton_clicked()
+{
+	if (ui->enabledAddonsList->selectedItems().isEmpty())
+	{
+		QMessageBox::warning(this, "Select an add-on", "You must select an add-on to uninstall it");
 
-    if(ui->enabledAddonsList->selectedItems().isEmpty()){
+		return;
+	}
 
-        QMessageBox::warning(this, "Select an add-on", "You must select an add-on to uninstall it");
+	QString addonName = ui->enabledAddonsList->currentItem()->text();
 
-        return;
+	QMessageBox::StandardButton response = QMessageBox::question(this, "Uninstallation confirm",
+		"Are you sure you want to uninstall " + addonName + "?");
 
-    }
+	if (response == QMessageBox::No) return;
 
-    QString addonName = ui->enabledAddonsList->currentItem()->text();
+	OpsDialog opsDialog(this, "Uninstalling " + addonName,
+		"Uninstalling " + addonName + "...");
 
-    QMessageBox::StandardButton response = QMessageBox::question(this, "Uninstallation confirm",
-                                                                 "Are you sure you want to uninstall " + addonName + "?");
+	opsDialog.show();
 
-    if(response == QMessageBox::No) return;
+	QStringList result = addonsOps.uninstallAddon(addonName);
 
-    QString result = addonsOps.uninstallAddon(addonName);
+	if (!result.isEmpty())
+	{
+		if (result.first() == "OVERRIDE")
+		{
+			opsDialog.hide();
 
-    if(!result.isEmpty()){
+			opsDialog.deleteLater();
 
-        QMessageBox::warning(this, "Can't uninstall " + addonName,
-                             "Can't uninstall " + addonName + ", You must uninstall " + result + " first");
+			QMessageBox::warning(this, "Can't uninstall " + addonName,
+				"Can't uninstall " + addonName +
+				", You must uninstall the following add-ons first:\n" + result.last());
 
-        return;
+			return;
+		}
+		else
+		{
+			opsDialog.hide();
 
-    }
+			opsDialog.deleteLater();
 
-    updateAddonsList();
+			QMessageBox::critical(this, addonName + " Uninstallation failed",
+				"Couldn't remove the following files:\n" + result.last());
+		}
+	}
 
-    QMessageBox::information(this, "Add-on uninstalled successfully", addonName + " uninstalled successfully");
+	updateAddonsList();
+
+	QMessageBox::information(this, "Add-on uninstalled successfully", addonName + " uninstalled successfully");
 }
 
-void MainWindow::on_actionSettings_triggered(){
+void MainWindow::on_actionSettings_triggered()
+{
+	SettingsWindow settingsWin(this, orbiterPath, addonsOps.backupDir, pathsList,
+		addonsOps.dbMap, addonsOps.ignoredMap, addonsOps.overMap,
+		addonsOps.moveToTrash, addonsOps.showAll);
 
-    SettingsWindow settingsWin(this, orbiterPath, addonsOps.backupDir, pathsList,
-                               addonsOps.dbMap, addonsOps.ignoredMap, addonsOps.overMap, addonsOps.moveToTrash);
+	settingsWin.show();
 
-    settingsWin.show();
+	QEventLoop loop;
 
-    QEventLoop loop;
+	connect(&settingsWin, SIGNAL(closed()), &loop, SLOT(quit()));
 
-    connect(&settingsWin, SIGNAL(closed()), &loop, SLOT(quit()));
+	loop.exec();
 
-    loop.exec();
+	orbiterPath = settingsWin.settingsOps.orbiterPath;
 
-    orbiterPath = settingsWin.settingsOps.orbiterPath;
+	setWidgets();
 
-    setWidgets();
+	pathsList = settingsWin.settingsOps.pathsList;
 
-    pathsList = settingsWin.settingsOps.pathsList;
+	addonsOps.orbiterPath = orbiterPath;
 
-    addonsOps.orbiterPath = orbiterPath;
+	addonsOps.dbMap = settingsWin.settingsOps.dbMap;
 
-    addonsOps.dbMap = settingsWin.settingsOps.dbMap;
+	addonsOps.backupDir = settingsWin.settingsOps.backupDir;
 
-    addonsOps.backupDir = settingsWin.settingsOps.backupDir;
+	addonsOps.ignoredMap = settingsWin.settingsOps.ignoredMap;
 
-    addonsOps.ignoredMap = settingsWin.settingsOps.ignoredMap;
+	addonsOps.overMap = settingsWin.settingsOps.overMap;
 
-    addonsOps.overMap = settingsWin.overMap;
+	addonsOps.moveToTrash = settingsWin.settingsOps.moveTrash;
 
-    addonsOps.moveToTrash = settingsWin.settingsOps.moveTrash;
+	addonsOps.showAll = settingsWin.showAll;
 
-    updateAddonsList();
-
+	updateAddonsList();
 }
 
-void MainWindow::on_actionRescan_triggered(){updateAddonsList();}
+void MainWindow::on_actionRescan_triggered() { updateAddonsList(); }
 
-void MainWindow::on_actionAbout_triggered(){
+void MainWindow::on_actionAbout_triggered()
+{
+	QMessageBox::about(this, "About Orbiter Addons Manager", "Orbiter Addons Manager <br>"
+		"A tool to organize your Orbiter add-ons <br> <br>"
 
-    QMessageBox::about(this, "About Orbiter Addons Manager","Orbiter Addons Manager <br>"
-                                                            "A tool to organize your Orbiter add-ons <br> <br>"
+		"Version: 1.0.5 <br>"
+		"Build date: Feb 2019 <br>"
+		"Check for updates on <a href='https://github.com/abdullah-radwan/OAD/releases'>"
+		"Github</a>. <br> <br>"
 
-                                                            "Version: 1.0.4a <br>"
-                                                            "Build date: Dec 2018 <br>"
-                                                            "Check for updates here: "
-                                                            "<a href='http://bit.ly/2QKVXqV'>http://bit.ly/2QKVXqV</a> <br> <br>"
-
-                                                            "Copyright © Abdullah Radwan <br>"
-                                                            "Icon by icons8.com");
+		"Copyright © Abdullah Radwan <br>"
+		"Icon by icons8.com");
 }
 
-MainWindow::~MainWindow(){
+MainWindow::~MainWindow()
+{
+	ConfigEditor::writeConfig({ orbiterPath, pathsList, addonsOps.dbMap, addonsOps.ignoredMap,
+							   addonsOps.overMap, addonsOps.moveToTrash });
 
-    ConfigEditor::writeConfig(orbiterPath, pathsList, addonsOps.dbMap, addonsOps.ignoredMap,
-                              addonsOps.overMap, addonsOps.moveToTrash);
-
-    delete ui;
+	delete ui;
 }
